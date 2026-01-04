@@ -1,0 +1,44 @@
+name: Alexa Share (Alpha)
+version: "1.0.0"
+slug: alexa_share
+description: "A Home Assistant add-on that runs a Next.js app for Alexa Share."
+url: "https://github.com/your-repo/alexa-share-addon"
+
+arch:
+  - amd64
+  - armv7
+  - aarch64
+
+startup: services
+boot: auto
+
+# Use Ingress instead of direct port
+ingress: true
+ingress_port: 8080 # The port your Next.js app listens on inside the container
+ingress_stream: true # Enable if you use WebSockets/SSE (safe to keep on)
+
+# Remove ports if you don't need external access outside of HA
+ports:
+  8080/tcp: 8080
+
+# Optional: if you keep ports, you can also keep webui, but it's not needed for Ingress
+webui: "http://[HOST]:[PORT:8080]/"
+
+# Sidebar appearance (applies when Ingress is enabled)
+panel_icon: mdi:link
+panel_title: Alexa Share
+panel_admin: false
+
+# API access (only if you actually call these APIs)
+hassio_api: true
+homeassistant_api: true
+
+# Folders
+map:
+  - homeassistant_config:rw # /config
+  - addon_config:rw # /data
+
+homeassistant: "2023.0.0"
+
+options: {}
+schema: {}
