@@ -1,0 +1,80 @@
+- id: '1739782472523'
+  name: Work Time CP
+  entities:
+    light.dinning_room:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6500
+      min_mireds: 153
+      max_mireds: 500
+      effect_list:
+      - 'Off'
+      - Party
+      - Relax
+      supported_color_modes:
+      - color_temp
+      - hs
+      effect:
+      color_mode:
+      brightness:
+      color_temp_kelvin:
+      color_temp:
+      hs_color:
+      rgb_color:
+      xy_color:
+      entity_id:
+      - light.dining_room_2
+      - light.dining_room_3
+      - light.dining_room_1
+      icon: mdi:lightbulb-group
+      friendly_name: Dinning Room
+      supported_features: 36
+      state: 'off'
+    light.living_room:
+      min_color_temp_kelvin: 2000
+      max_color_temp_kelvin: 6500
+      min_mireds: 153
+      max_mireds: 500
+      supported_color_modes:
+      - color_temp
+      - hs
+      color_mode:
+      brightness:
+      color_temp_kelvin:
+      color_temp:
+      hs_color:
+      rgb_color:
+      xy_color:
+      entity_id:
+      - light.lounge_1
+      - light.lounge_2
+      - light.lounge_3
+      icon: mdi:lightbulb-group
+      friendly_name: Living Room
+      supported_features: 0
+      state: 'off'
+  icon: mdi:account-network
+  metadata:
+    light.dinning_room:
+      entity_only: true
+    light.living_room:
+      entity_only: true
+- id: '1763667731650'
+  name: Clean kitchen
+  entities:
+    update.dreame_vacuum_update:
+      auto_update: false
+      display_precision: 0
+      installed_version: v2.0.0b16
+      in_progress: false
+      latest_version: v1.0.6
+      release_summary:
+      release_url: https://github.com/Tasshack/dreame-vacuum/releases/v1.0.6
+      skipped_version:
+      title:
+      update_percentage:
+      entity_picture: https://brands.home-assistant.io/_/dreame_vacuum/icon.png
+      friendly_name: Dreame Vacuum update
+      supported_features: 23
+      state: 'off'
+  metadata: {}
+  icon: mdi:countertop

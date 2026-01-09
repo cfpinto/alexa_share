@@ -1,5 +1,5 @@
 name: Alexa Share (Alpha)
-version: "1.0.0"
+version: "1.0.1"
 slug: alexa_share
 description: "A Home Assistant add-on that runs a Next.js app for Alexa Share."
 url: "https://github.com/your-repo/alexa-share-addon"

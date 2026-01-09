@@ -1,0 +1,43 @@
+- id: '1764403612951'
+  alias: Christmas lights on
+  description: ''
+  triggers:
+  - trigger: sun
+    event: sunset
+  conditions: []
+  actions:
+  - type: turn_on
+    device_id: 291e6d4661866cb2a63bdde92610515f
+    entity_id: 3547d5ea840a44d94acaffe3624f1f84
+    domain: switch
+  - type: turn_on
+    device_id: c534ca8f13f5f0e7cb754ec5c32be7ab
+    entity_id: 1d07c843e30478b60cfbf975125cf6b2
+    domain: switch
+  mode: single
+- id: '1764403761838'
+  alias: Christmas lights off
+  description: ''
+  triggers:
+  - alias: Time is 23:00
+    trigger: time
+    at: '23:00:00'
+    weekday:
+    - mon
+    - tue
+    - wed
+    - thu
+    - fri
+    - sat
+    - sun
+  conditions: []
+  actions:
+  - type: turn_off
+    device_id: 291e6d4661866cb2a63bdde92610515f
+    entity_id: 3547d5ea840a44d94acaffe3624f1f84
+    domain: switch
+  - type: turn_off
+    device_id: c534ca8f13f5f0e7cb754ec5c32be7ab
+    entity_id: 1d07c843e30478b60cfbf975125cf6b2
+    domain: switch
+  mode: single
