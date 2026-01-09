@@ -49,6 +49,7 @@
 		"@types/lodash": "4.17.21",
 		"@types/nock": "^11.1.0",
 		"@vitejs/plugin-react": "^5.1.2",
+		"@vitest/coverage-v8": "4.0.16",
 		"@vitest/ui": "^4.0.16",
 		"axios": "1.13.2",
 		"jsdom": "^27.4.0",

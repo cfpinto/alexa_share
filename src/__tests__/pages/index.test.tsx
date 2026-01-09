@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as useAlexaConfigModule from "@/hooks/use-alexa-config.hook";
 import type { HydratedEntity } from "@/hooks/use-synced-entities.hook";
 import * as useSyncedEntitiesModule from "@/hooks/use-synced-entities.hook";
-import Home from "./index";
+import Home from "../../pages/index";
 
 // Mock dependencies
 vi.mock("@/hooks/use-synced-entities.hook");

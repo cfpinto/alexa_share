@@ -31,9 +31,6 @@ jobs:
       - name: Run Biome check
         run: pnpm run lint
 
-      - name: Check formatting
-        run: pnpm biome format --check
-
       - name: Type check
         run: pnpm run type-check
 

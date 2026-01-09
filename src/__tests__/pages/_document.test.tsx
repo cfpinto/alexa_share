@@ -19,7 +19,7 @@ vi.mock("next/document", () => ({
 	NextScript: () => <script data-testid="mock-next-script" />,
 }));
 
-import Document from "./_document";
+import Document from "../../pages/_document";
 
 describe("Document", () => {
 	it("should render Html component with lang='en'", () => {
