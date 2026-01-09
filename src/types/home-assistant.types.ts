@@ -1,5 +1,3 @@
-import type { JsonLikeObject } from "./utility.types";
-
 export type Device = {
 	id: string;
 	name: string;
@@ -11,7 +9,7 @@ export type Device = {
 export type Entity = {
 	id: string;
 	entity_id: string;
-	entity_category: string;
+	entity_category: string | null;
 	name: string;
 	area_id: string | null;
 	device_id: string;
@@ -45,7 +43,8 @@ export enum RequestTypeId {
 	GET_AREAS = 4,
 	GET_CONFIG = 5,
 }
-export type HaConfig = JsonLikeObject & {
+export type HaConfig = {
+	[key: string]: unknown;
 	alexa?: {
 		smart_home?: {
 			locale?: string;

@@ -67,7 +67,10 @@ describe("useSyncedEntities", () => {
 	const wrapper = ({ children }: { children: ReactNode }) => (
 		<QueryClientProvider client={queryClient}>
 			<HaContext.Provider
-				value={{ entities: mockEntities as unknown as CompiledEntity[] }}
+				value={{
+					entities: mockEntities as unknown as CompiledEntity[],
+					reload: () => {},
+				}}
 			>
 				{children}
 			</HaContext.Provider>

@@ -24,7 +24,7 @@ export type CompositeColumn = {
 	key: string;
 	sortable?: boolean;
 	inline?: boolean;
-	onchange?: (event: ChangeEvent) => void;
+	onchange?: (event: ChangeEvent<HTMLInputElement>) => void;
 };
 
 export type Column = string | CompositeColumn;

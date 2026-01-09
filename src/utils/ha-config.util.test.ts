@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { HaConfig } from "@/types/home-assistant.types";
 import {
 	createBackup,
 	parseYAML,
@@ -111,7 +112,7 @@ describe("ha-config.util", () => {
 
 			const result = updateAlexaConfig(config, entityIds);
 
-			expect(result.alexa.smart_home.filter.include_entities).toEqual(
+			expect(result.alexa?.smart_home?.filter?.include_entities).toEqual(
 				entityIds,
 			);
 		});
@@ -136,7 +137,7 @@ describe("ha-config.util", () => {
 		it("should handle null config", () => {
 			const entityIds = ["light.living_room"];
 
-			const result = updateAlexaConfig(null, entityIds);
+			const result = updateAlexaConfig(null as unknown as HaConfig, entityIds);
 
 			expect(result).toEqual({
 				alexa: {
@@ -157,7 +158,7 @@ describe("ha-config.util", () => {
 
 			const result = updateAlexaConfig(config, entityIds);
 
-			expect(result.alexa.smart_home.filter.include_entities).toEqual(
+			expect(result.alexa?.smart_home?.filter?.include_entities).toEqual(
 				entityIds,
 			);
 		});
