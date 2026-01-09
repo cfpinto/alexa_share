@@ -1,0 +1,40 @@
+clean_bathroom:
+  sequence:
+  - action: xiaomi_miio.vacuum_clean_segment
+    metadata: {}
+    data:
+      segments: 1
+    target:
+      device_id: 3428290c0568d556b9b38a13e843d886
+  alias: Clean Bathroom
+  description: ''
+clean_kitchen:
+  sequence:
+  - action: script.set_kitchen_custom_mode
+    metadata: {}
+    data: {}
+  - action: dreame_vacuum.vacuum_clean_segment
+    metadata: {}
+    data:
+      segments: 1
+      repeats: 2
+      suction_level: 3
+    target:
+      device_id: dda14aafb5ca202296cb5f2da3bc923e
+  alias: Clean Kitchen
+  description: ''
+set_kitchen_custom_mode:
+  sequence:
+  - action: dreame_vacuum.vacuum_set_custom_cleaning
+    metadata: {}
+    data:
+      segment_id: 1
+      suction_level: 3
+      water_volume: 1
+      cleaning_mode: 1
+      repeats: 2
+    target:
+      device_id: dda14aafb5ca202296cb5f2da3bc923e
+  alias: Set Kitchen Custom Mode
+  description: ''
+  icon: mdi:countertop

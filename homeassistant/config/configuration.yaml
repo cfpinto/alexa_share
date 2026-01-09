@@ -1,0 +1,48 @@
+default_config: null
+automation: '!include automations.yaml'
+script: '!include scripts.yaml'
+scene: '!include scenes.yaml'
+homeassistant:
+  auth_providers:
+    - type: homeassistant
+    - type: trusted_networks
+      trusted_networks:
+        - 192.168.68.0/24
+      trusted_users:
+        192.168.68.0/24:
+          - 3cf2bbf5ad13466b81bd026895130527
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 192.168.68.154
+alexa:
+  smart_home:
+    locale: en-GB
+    endpoint: https://api.eu.amazonalexa.com/v3/events
+    client_id: amzn1.application-oa2-client.e3264784db184e21abcda3928add9a68
+    client_secret: amzn1.oa2-cs.v1.678917db088aa8dedeac39150c8682489dcfdeee4b4616da2ae02663365ed5c8
+    filter:
+      include_entities:
+        - light.living_room_light_switch
+        - light.lounge_lights
+        - light.dinning_room_lights
+        - climate.love_bedroom_trv
+        - switch.christmas_tree
+        - switch.christmas_outdoor_lights
+        - switch.holidays
+        - light.bedroom_light_2
+        - light.side_light
+    entity_config:
+      light.living_room_light_switch:
+        name: Living Room Lights
+      climate.love_bedroom_trv:
+        name: Master Bedroom TRV
+      switch.christmas_tree:
+        name: Christmas tree
+      switch.christmas_outdoor_lights:
+        name: Christmas Outdoor Lights
+      switch.holidays:
+        name: Holidays
+zha:
+  enable_quirks: true
+  custom_quirks_path: config/zha_quirks/

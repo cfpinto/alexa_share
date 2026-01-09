@@ -15,19 +15,29 @@ import {
 import { chunk, filter, orderBy } from "lodash";
 import Head from "next/head";
 import { type ChangeEvent, useState } from "react";
+import toast from "react-hot-toast";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { type Row, SortableTable } from "@/components/sortable-table";
-import { useEntities } from "@/hooks/entities.hook";
+import { createTableHeaders, tableQuickFilters } from "@/configs/entities";
+import { usePublishAlexaConfig } from "@/hooks/use-alexa-config.hook";
+import { useSyncedEntities } from "@/hooks/use-synced-entities.hook";
 
 export default function Home() {
-	const entities = useEntities();
+	const {
+		entities,
+		setSyncStatus,
+		getSyncedEntityIds,
+		getSyncedCount,
+		reload,
+	} = useSyncedEntities();
+	const publishMutation = usePublishAlexaConfig();
+
 	const [sortBy, setSortBy] = useState<string>("device_name");
 	const [sortDirection, setSortDirection] = useState<number>(1);
 	const [term, setTerm] = useState<string>("");
 	const [page, setPage] = useState<number>(0);
 	const [show, setShow] = useState<"all" | "synced" | "unsynced">("all");
-	const [synced, setSynced] = useState<Map<string, string>>(
-		new Map<string, string>(),
-	);
+	const [showConfirmDialog, setShowConfirmDialog] = useState<boolean>(false);
 
 	const onSort = (key: string) => {
 		if (key === sortBy) {
@@ -57,60 +67,64 @@ export default function Home() {
 	const onSyncedChanged = (event: ChangeEvent<HTMLInputElement>) => {
 		event.stopPropagation();
 
-		const entityId = entities.find(
-			(e) => e.id === event.target.value,
-		)?.entity_id;
+		const entity = entities.find((e) => e.id === event.target.value);
 
-		if (event.target.checked && entityId) {
-			synced.set(event.target.value, entityId);
+		if (entity) {
+			setSyncStatus(entity.entity_id, event.target.checked);
 		}
-
-		if (!event.target.checked) {
-			synced.delete(event.target.value);
-		}
-
-		setSynced(synced);
 	};
 
-	const tableHeaders = [
-		{ label: "Device", key: "device_name", sortable: true },
-		{ label: "Name", key: "entity_name", sortable: true },
-		{ label: "Entity Id", key: "entity_id", sortable: true },
-		{ label: "Manufacturer", key: "manufacturer", sortable: true },
-		{ label: "Area", key: "area", sortable: true },
-		{
-			label: "Synced",
-			key: "synced",
-			sortable: false,
-			inline: true,
-			onchange: onSyncedChanged,
-		},
-	];
+	const handlePublishChanges = () => {
+		setShowConfirmDialog(true);
+	};
 
-	const tabs = [
-		{
-			label: "All",
-			value: "all",
-		},
-		{
-			label: "Synced",
-			value: "synced",
-		},
-		{
-			label: "Unsynced",
-			value: "unsynced",
-		},
-	];
+	const confirmPublish = () => {
+		// Get synced entity IDs for publishing
+		const entityIds = getSyncedEntityIds();
+
+		publishMutation.mutate(entityIds, {
+			onSuccess: (data) => {
+				setShowConfirmDialog(false);
+				toast.success(
+					`Configuration updated successfully! ${data.entitiesCount} entities synced to Alexa. You may need to reload Home Assistant configuration for changes to take effect.`,
+					{
+						duration: 6000,
+					},
+				);
+			},
+			onError: (error) => {
+				setShowConfirmDialog(false);
+				console.error("Error publishing changes:", error);
+				toast.error(
+					`Error: ${(error as Error).message}. Please check the logs and try again.`,
+					{
+						duration: 6000,
+					},
+				);
+			},
+		});
+	};
+
+	const cancelPublish = () => {
+		setShowConfirmDialog(false);
+	};
+
+	const handleReloadDevices = () => {
+		reload();
+		toast.success("Reloading devices from Home Assistant...", {
+			duration: 2000,
+		});
+	};
 
 	const filtered = filter(
 		entities.map(
-			({ id, name, device, entity_id, entity_category, area }, i) => ({
+			({ id, name, device, entity_id, entity_category, area, isSynced }) => ({
 				id,
 				entity_id,
 				entity_category,
 				entity_name: name ?? "",
 				device_name: device.name?.trim() ?? "",
-				synced: synced.get(id) !== undefined,
+				synced: isSynced,
 				manufacturer: device.manufacturer ?? "",
 				model: device.model ?? "",
 				area: area?.area_id ?? "",
@@ -155,20 +169,30 @@ export default function Home() {
 										variant="outlined"
 										className="flex items-center gap-1"
 										size="sm"
+										onClick={handleReloadDevices}
 									>
 										<ArrowPathIcon className="h-4 w-4" />
 										Reload Devices
 									</Button>
-									<Button className="flex items-center gap-1" size="sm">
+									<Button
+										className="flex items-center gap-1"
+										size="sm"
+										onClick={handlePublishChanges}
+										disabled={
+											publishMutation.isPending || getSyncedCount() === 0
+										}
+									>
 										<ArrowUpCircleIcon strokeWidth={2} className="h-4 w-4" />{" "}
-										Publish Changes
+										{publishMutation.isPending
+											? "Publishing..."
+											: "Publish Changes"}
 									</Button>
 								</div>
 							</div>
 							<div className="flex flex-col items-center justify-between gap-4 md:flex-row">
 								<Tabs value="all" className="w-full md:w-max">
 									<TabsHeader>
-										{tabs.map(({ label, value }) => (
+										{tableQuickFilters.map(({ label, value }) => (
 											<Tab
 												key={value}
 												value={value}
@@ -190,7 +214,7 @@ export default function Home() {
 						</CardHeader>
 						<CardBody className="overflow-scroll px-0">
 							<SortableTable
-								columns={tableHeaders}
+								columns={createTableHeaders(onSyncedChanged)}
 								data={data[page]}
 								onSort={onSort}
 							/>
@@ -224,6 +248,18 @@ export default function Home() {
 						</CardFooter>
 					</Card>
 				</div>
+
+				<ConfirmDialog
+					open={showConfirmDialog}
+					title="Publish Changes to Alexa?"
+					message={`You are about to publish ${getSyncedCount()} ${getSyncedCount() === 1 ? "entity" : "entities"} to your Alexa configuration. This will update your Home Assistant configuration file. Do you want to continue?`}
+					confirmText="Publish"
+					cancelText="Cancel"
+					variant="warning"
+					onConfirm={confirmPublish}
+					onCancel={cancelPublish}
+					isLoading={publishMutation.isPending}
+				/>
 			</main>
 		</>
 	);

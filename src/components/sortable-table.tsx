@@ -5,6 +5,7 @@ import {
 	Switch,
 	Typography,
 } from "@material-tailwind/react";
+import type { ChangeEvent } from "react";
 
 export type Action = {
 	type: "edit";
@@ -23,7 +24,7 @@ export type CompositeColumn = {
 	key: string;
 	sortable?: boolean;
 	inline?: boolean;
-	onchange?: (event: any) => void;
+	onchange?: (event: ChangeEvent) => void;
 };
 
 export type Column = string | CompositeColumn;
