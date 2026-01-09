@@ -12,6 +12,8 @@
 		"type-check": "tsc --noEmit",
 		"compose:up": "docker-compose up --build",
 		"compose:down": "docker-compose down",
+		"docker:build": "podman build -t alexa-share .",
+		"docker:run:dev": "podman run -p 8080:8080 --env-file .env -v /homeassistant/config:/config -v ${pwd}/homeassistant/addons:/data alexa-share",
 		"test": "vitest",
 		"test:ui": "vitest --ui",
 		"test:coverage": "vitest --coverage"

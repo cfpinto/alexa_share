@@ -10,6 +10,9 @@ node_modules
 .env.local
 .env*.local
 
+# Config backups
+*.backup
+
 # Docker volumes
 homeassistant_config/
 addon_config/
