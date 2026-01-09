@@ -37,7 +37,7 @@ jobs:
       - name: Check for unused dependencies
         run: |
           echo "Checking for unused dependencies..."
-          npx depcheck --ignores="@types/*,@vitejs/plugin-react,vitest,@vitest/ui,jsdom,@testing-library/*"
+          pnpm dlx depcheck --ignores="@types/*,@vitejs/plugin-react,vitest,@vitest/ui,@vitest/coverage-v8,jsdom,@testing-library/*,tailwindcss,postcss,autoprefixer"
 
   security:
     name: Security Audit
