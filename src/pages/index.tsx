@@ -151,23 +151,30 @@ export default function Home() {
 			<Head>
 				<title>Devices</title>
 			</Head>
-			<main className="relative grid min-h-[100vh] w-screen p-8">
+			<main className="relative grid min-h-[100vh] w-screen p-8 bg-ha-light-bg dark:bg-ha-dark-bg">
 				<div className="flex-col gap-2 text-center">
-					<Card className="h-full w-full">
-						<CardHeader floated={false} shadow={false} className="rounded-none">
+					<Card className="h-full w-full bg-ha-light-card dark:bg-ha-dark-card border border-ha-light-divider dark:border-ha-dark-divider">
+						<CardHeader
+							floated={false}
+							shadow={false}
+							className="rounded-none bg-ha-light-card dark:bg-ha-dark-card"
+						>
 							<div className="mb-8 flex items-center justify-between gap-8">
 								<div className="text-left">
-									<Typography variant="h5" color="blue-gray">
+									<Typography
+										variant="h5"
+										className="text-ha-light-text dark:text-ha-dark-text"
+									>
 										Devices
 									</Typography>
-									<Typography color="gray" className="mt-1 font-normal">
+									<Typography className="mt-1 font-normal text-ha-light-text-secondary dark:text-ha-dark-text-secondary">
 										Select devices to share with Alexa Home
 									</Typography>
 								</div>
 								<div className="flex shrink-0 flex-col gap-2 sm:flex-row">
 									<Button
 										variant="outlined"
-										className="flex items-center gap-1"
+										className="flex items-center gap-1 border-ha-primary text-ha-primary hover:bg-ha-primary/10"
 										size="sm"
 										onClick={handleReloadDevices}
 									>
@@ -175,7 +182,7 @@ export default function Home() {
 										Reload Devices
 									</Button>
 									<Button
-										className="flex items-center gap-1"
+										className="flex items-center gap-1 bg-ha-primary hover:bg-ha-primary-dark"
 										size="sm"
 										onClick={handlePublishChanges}
 										disabled={
@@ -219,11 +226,10 @@ export default function Home() {
 								onSort={onSort}
 							/>
 						</CardBody>
-						<CardFooter className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+						<CardFooter className="flex items-center justify-between border-t border-ha-light-divider dark:border-ha-dark-divider p-4">
 							<Typography
 								variant="small"
-								color="blue-gray"
-								className="font-normal"
+								className="font-normal text-ha-light-text-secondary dark:text-ha-dark-text-secondary"
 							>
 								Page {page + 1} of {data.length}
 							</Typography>
@@ -233,6 +239,7 @@ export default function Home() {
 									variant="outlined"
 									size="sm"
 									onClick={onPrevPageClick}
+									className="border-ha-light-divider dark:border-ha-dark-divider text-ha-light-text dark:text-ha-dark-text"
 								>
 									Previous
 								</Button>
@@ -241,6 +248,7 @@ export default function Home() {
 									variant="outlined"
 									size="sm"
 									onClick={onNextPageClick}
+									className="border-ha-light-divider dark:border-ha-dark-divider text-ha-light-text dark:text-ha-dark-text"
 								>
 									Next
 								</Button>

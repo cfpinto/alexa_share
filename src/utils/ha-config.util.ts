@@ -2,8 +2,8 @@ import fs from "node:fs/promises";
 import yaml from "js-yaml";
 import type { HaConfig } from "@/types/home-assistant.types";
 
-const CONFIG_PATH = `${process.env.ROOT_FOLDER ?? ""}/config/configuration.yaml`;
-const BACKUP_PATH = `${process.env.ROOT_FOLDER ?? ""}/config/configuration.yaml.backup`;
+const CONFIG_PATH = `${process.env.HA_CONF_PATH ?? "/"}homeassistant/configuration.yaml`;
+const BACKUP_PATH = `${process.env.HA_CONF_PATH ?? "/"}homeassistant/configuration.yaml.backup`;
 
 /**
  * Reads the Home Assistant configuration file
