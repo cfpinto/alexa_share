@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as useHaSocketModule from "@/hooks/use-ha-websocket.hook";
 import type { CompiledEntity } from "@/types/items.types";
-import App from "./_app";
+import App from "../../pages/_app";
 
 // Mock the hooks and dependencies
 vi.mock("@/hooks/use-ha-websocket.hook");
