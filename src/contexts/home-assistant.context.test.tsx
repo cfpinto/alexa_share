@@ -5,6 +5,7 @@ import type { CompiledEntity } from "@/types/items.types";
 import { type ContextData, HaContext } from "./home-assistant.context";
 
 describe("HaContext", () => {
+	const mockReload = () => {};
 	const mockEntities: CompiledEntity[] = [
 		{
 			id: "1",
@@ -57,7 +58,7 @@ describe("HaContext", () => {
 
 	it("should provide default empty entities array", () => {
 		render(
-			<HaContext.Provider value={{ entities: [] }}>
+			<HaContext.Provider value={{ entities: [], reload: mockReload }}>
 				<TestConsumer />
 			</HaContext.Provider>,
 		);
@@ -67,7 +68,9 @@ describe("HaContext", () => {
 
 	it("should provide entities to consumers", () => {
 		render(
-			<HaContext.Provider value={{ entities: mockEntities }}>
+			<HaContext.Provider
+				value={{ entities: mockEntities, reload: mockReload }}
+			>
 				<TestConsumer />
 			</HaContext.Provider>,
 		);
@@ -81,7 +84,7 @@ describe("HaContext", () => {
 
 	it("should update context value when provider value changes", () => {
 		const { rerender } = render(
-			<HaContext.Provider value={{ entities: [] }}>
+			<HaContext.Provider value={{ entities: [], reload: mockReload }}>
 				<TestConsumer />
 			</HaContext.Provider>,
 		);
@@ -89,7 +92,9 @@ describe("HaContext", () => {
 		expect(screen.getByTestId("entities-count")).toHaveTextContent("0");
 
 		rerender(
-			<HaContext.Provider value={{ entities: mockEntities }}>
+			<HaContext.Provider
+				value={{ entities: mockEntities, reload: mockReload }}
+			>
 				<TestConsumer />
 			</HaContext.Provider>,
 		);
@@ -104,7 +109,9 @@ describe("HaContext", () => {
 		}
 
 		render(
-			<HaContext.Provider value={{ entities: mockEntities }}>
+			<HaContext.Provider
+				value={{ entities: mockEntities, reload: mockReload }}
+			>
 				<TestConsumer />
 				<NestedConsumer />
 			</HaContext.Provider>,
@@ -135,7 +142,9 @@ describe("HaContext", () => {
 		];
 
 		render(
-			<HaContext.Provider value={{ entities: entityWithEmptyCategory }}>
+			<HaContext.Provider
+				value={{ entities: entityWithEmptyCategory, reload: mockReload }}
+			>
 				<TestConsumer />
 			</HaContext.Provider>,
 		);
@@ -161,7 +170,9 @@ describe("HaContext", () => {
 		];
 
 		render(
-			<HaContext.Provider value={{ entities: entityWithoutArea }}>
+			<HaContext.Provider
+				value={{ entities: entityWithoutArea, reload: mockReload }}
+			>
 				<TestConsumer />
 			</HaContext.Provider>,
 		);
@@ -191,7 +202,9 @@ describe("HaContext", () => {
 		);
 
 		render(
-			<HaContext.Provider value={{ entities: largeEntityList }}>
+			<HaContext.Provider
+				value={{ entities: largeEntityList, reload: mockReload }}
+			>
 				<TestConsumer />
 			</HaContext.Provider>,
 		);
@@ -213,7 +226,10 @@ describe("HaContext", () => {
 	});
 
 	it("should maintain referential equality for the same entity array", () => {
-		const contextValue: ContextData = { entities: mockEntities };
+		const contextValue: ContextData = {
+			entities: mockEntities,
+			reload: mockReload,
+		};
 
 		function ReferenceTestConsumer() {
 			const context1 = useContext(HaContext);
@@ -249,7 +265,7 @@ describe("HaContext", () => {
 		}
 
 		const { rerender } = render(
-			<HaContext.Provider value={{ entities: entities1 }}>
+			<HaContext.Provider value={{ entities: entities1, reload: mockReload }}>
 				<Consumer1 />
 			</HaContext.Provider>,
 		);
@@ -257,7 +273,7 @@ describe("HaContext", () => {
 		expect(screen.getByTestId("consumer1-count")).toHaveTextContent("1");
 
 		rerender(
-			<HaContext.Provider value={{ entities: entities2 }}>
+			<HaContext.Provider value={{ entities: entities2, reload: mockReload }}>
 				<Consumer2 />
 			</HaContext.Provider>,
 		);
@@ -286,7 +302,9 @@ describe("HaContext", () => {
 		];
 
 		render(
-			<HaContext.Provider value={{ entities: entityWithCategory }}>
+			<HaContext.Provider
+				value={{ entities: entityWithCategory, reload: mockReload }}
+			>
 				<TestConsumer />
 			</HaContext.Provider>,
 		);
@@ -309,9 +327,13 @@ describe("HaContext", () => {
 		}
 
 		render(
-			<HaContext.Provider value={{ entities: mockEntities }}>
+			<HaContext.Provider
+				value={{ entities: mockEntities, reload: mockReload }}
+			>
 				<OuterConsumer />
-				<HaContext.Provider value={{ entities: [mockEntities[0]] }}>
+				<HaContext.Provider
+					value={{ entities: [mockEntities[0]], reload: mockReload }}
+				>
 					<InnerConsumer />
 				</HaContext.Provider>
 			</HaContext.Provider>,

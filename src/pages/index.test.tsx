@@ -337,7 +337,7 @@ describe("Home (index page)", () => {
 			failureCount: 0,
 			failureReason: null,
 			isPaused: false,
-			variables: undefined,
+			variables: [],
 			submittedAt: 0,
 			context: undefined,
 		});
@@ -363,7 +363,7 @@ describe("Home (index page)", () => {
 			failureCount: 0,
 			failureReason: null,
 			isPaused: false,
-			variables: undefined,
+			variables: [],
 			submittedAt: 0,
 			context: undefined,
 		});
