@@ -14,7 +14,6 @@ import {
 	getAddonOptions,
 	OPTIONS_PATH,
 } from "./addon-options.util";
-import { a } from "vitest/dist/chunks/suite.d.BJWk38HB";
 
 describe("addon-options.util", () => {
 	beforeEach(() => {
