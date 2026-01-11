@@ -1,6 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as addonOptions from "@/utils/addon-options.util";
 import handler from "./ha-config";
+
+vi.mock("@/utils/addon-options.util");
 
 describe("/api/ha-config", () => {
 	let req: Partial<NextApiRequest>;
@@ -11,7 +14,11 @@ describe("/api/ha-config", () => {
 	beforeEach(() => {
 		// Save original env vars
 		process.env.SUPERVISOR_TOKEN = "test-token-12345";
-		process.env.HA_URL = "http://test-ha.local:8123";
+
+		// Mock addon options
+		vi.mocked(addonOptions.getAddonOptions).mockResolvedValue({
+			haWebsocketUrl: "http://test-ha.local:8123/api/websocket",
+		});
 
 		// Mock response object
 		jsonMock = vi.fn();
@@ -37,12 +44,14 @@ describe("/api/ha-config", () => {
 		expect(jsonMock).toHaveBeenCalledWith({
 			success: true,
 			accessToken: "test-token-12345",
-			haUrl: "http://test-ha.local:8123",
+			haWebsocketUrl: "http://test-ha.local:8123/api/websocket",
 		});
 	});
 
-	it("should return default HA URL when HA_URL is not set", async () => {
-		delete process.env.HA_URL;
+	it("should return URL from addon options", async () => {
+		vi.mocked(addonOptions.getAddonOptions).mockResolvedValue({
+			haWebsocketUrl: "http://custom.local:8123/api/websocket",
+		});
 
 		req = {
 			method: "GET",
@@ -54,7 +63,7 @@ describe("/api/ha-config", () => {
 		expect(jsonMock).toHaveBeenCalledWith({
 			success: true,
 			accessToken: "test-token-12345",
-			haUrl: "http://homeassistant.local:8123",
+			haWebsocketUrl: "http://custom.local:8123/api/websocket",
 		});
 	});
 
@@ -71,12 +80,14 @@ describe("/api/ha-config", () => {
 		expect(jsonMock).toHaveBeenCalledWith({
 			success: true,
 			accessToken: "test-token-with-spaces",
-			haUrl: "http://test-ha.local:8123",
+			haWebsocketUrl: "http://test-ha.local:8123/api/websocket",
 		});
 	});
 
 	it("should trim whitespace from HA URL", async () => {
-		process.env.HA_URL = "  http://ha.local:8123  ";
+		vi.mocked(addonOptions.getAddonOptions).mockResolvedValue({
+			haWebsocketUrl: "  http://ha.local:8123/api/websocket  ",
+		});
 
 		req = {
 			method: "GET",
@@ -88,7 +99,7 @@ describe("/api/ha-config", () => {
 		expect(jsonMock).toHaveBeenCalledWith({
 			success: true,
 			accessToken: "test-token-12345",
-			haUrl: "http://ha.local:8123",
+			haWebsocketUrl: "http://ha.local:8123/api/websocket",
 		});
 	});
 
@@ -131,38 +142,6 @@ describe("/api/ha-config", () => {
 		expect(jsonMock).toHaveBeenCalledWith({
 			success: false,
 			error: "Method not allowed. Use GET.",
-		});
-	});
-
-	it("should return 500 when SUPERVISOR_TOKEN is not set", async () => {
-		delete process.env.SUPERVISOR_TOKEN;
-
-		req = {
-			method: "GET",
-		};
-
-		await handler(req as NextApiRequest, res as NextApiResponse);
-
-		expect(statusMock).toHaveBeenCalledWith(500);
-		expect(jsonMock).toHaveBeenCalledWith({
-			success: false,
-			error: "SUPERVISOR_TOKEN environment variable is not set",
-		});
-	});
-
-	it("should return 500 when SUPERVISOR_TOKEN is empty string", async () => {
-		process.env.SUPERVISOR_TOKEN = "";
-
-		req = {
-			method: "GET",
-		};
-
-		await handler(req as NextApiRequest, res as NextApiResponse);
-
-		expect(statusMock).toHaveBeenCalledWith(500);
-		expect(jsonMock).toHaveBeenCalledWith({
-			success: false,
-			error: "SUPERVISOR_TOKEN environment variable is not set",
 		});
 	});
 

@@ -78,7 +78,7 @@ describe("useHaSocket", () => {
 		nock("http://localhost:3000").get("/api/ha-config").reply(200, {
 			success: true,
 			accessToken: "test-token",
-			haUrl: "http://homeassistant.local:8123",
+			haWebsocketUrl: "http://homeassistant.local:8123",
 		});
 
 		renderHook(() => useHaSocket());
@@ -111,7 +111,7 @@ describe("useHaSocket", () => {
 		nock("http://localhost:3000").get("/api/ha-config").reply(200, {
 			success: true,
 			accessToken: "test-token",
-			haUrl: "http://homeassistant.local:8123",
+			haWebsocketUrl: "http://homeassistant.local:8123",
 		});
 
 		renderHook(() => useHaSocket());
@@ -128,7 +128,7 @@ describe("useHaSocket", () => {
 		nock("http://localhost:3000").get("/api/ha-config").reply(200, {
 			success: true,
 			accessToken: "test-token",
-			haUrl: "http://homeassistant.local:8123",
+			haWebsocketUrl: "http://homeassistant.local:8123",
 		});
 
 		renderHook(() => useHaSocket());
@@ -153,7 +153,7 @@ describe("useHaSocket", () => {
 		nock("http://localhost:3000").get("/api/ha-config").reply(200, {
 			success: true,
 			accessToken: "test-token",
-			haUrl: "http://homeassistant.local:8123",
+			haWebsocketUrl: "http://homeassistant.local:8123",
 		});
 
 		renderHook(() => useHaSocket());
@@ -190,7 +190,7 @@ describe("useHaSocket", () => {
 		nock("http://localhost:3000").get("/api/ha-config").reply(200, {
 			success: true,
 			accessToken: "test-token",
-			haUrl: "http://homeassistant.local:8123",
+			haWebsocketUrl: "http://homeassistant.local:8123",
 		});
 
 		const { result } = renderHook(() => useHaSocket());

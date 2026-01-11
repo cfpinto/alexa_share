@@ -50,20 +50,20 @@ export default function App({ Component, pageProps }: AppProps) {
 						toastOptions={{
 							duration: 4000,
 							style: {
-								background: "#363636",
-								color: "#fff",
+								background: "#1C1C1C", // ha-dark-card
+								color: "#E1E1E1", // ha-dark-text
 							},
 							success: {
 								duration: 3000,
 								iconTheme: {
-									primary: "#4ade80",
+									primary: "#4CAF50", // ha-success
 									secondary: "#fff",
 								},
 							},
 							error: {
 								duration: 5000,
 								iconTheme: {
-									primary: "#ef4444",
+									primary: "#F44336", // ha-error
 									secondary: "#fff",
 								},
 							},

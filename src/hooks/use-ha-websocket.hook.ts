@@ -27,12 +27,12 @@ const buildWebSocketUrl = (baseUrl: string): string => {
 	try {
 		const url = new URL(baseUrl);
 		// Convert http -> ws, https -> wss
-		const wsProtocol = url.protocol === "https:" ? "wss:" : "ws:";
-		return `${wsProtocol}//${url.host}/api/websocket`;
+		url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+		return url.toString();
 	} catch {
 		console.error("Invalid Home Assistant URL:", baseUrl);
 		// Fallback to default
-		return "ws://homeassistant.local:8123/api/websocket";
+		return `ws://homeassistant.local:8123/api/websocket`;
 	}
 };
 
@@ -85,7 +85,7 @@ export const useHaSocket = () => {
 	const [areas, setAreas] = useState<Map<string, Area>>(new Map());
 	const [compiled, setCompiled] = useState<CompiledEntity[]>([]);
 	const [accessToken, setAccessToken] = useState<string | null>(null);
-	const [haUrl, setHaUrl] = useState<string | null>(null);
+	const [haWebsocketUrl, setHaWebsocketUrl] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [isConnected, setIsConnected] = useState<boolean>(false);
 	const [webSocketRef, setWebSocketRef] = useState<WebSocket | null>(null);
@@ -97,13 +97,13 @@ export const useHaSocket = () => {
 				const { data } = await axios.get<{
 					success: boolean;
 					accessToken?: string;
-					haUrl?: string;
+					haWebsocketUrl?: string;
 					error?: string;
 				}>("/api/ha-config");
 
-				if (data.success && data.accessToken && data.haUrl) {
+				if (data.success && data.accessToken && data.haWebsocketUrl) {
 					setAccessToken(data.accessToken);
-					setHaUrl(data.haUrl);
+					setHaWebsocketUrl(data.haWebsocketUrl);
 					setError(null);
 				} else {
 					const errorMsg = `Failed to fetch access token: ${data.error || "Unknown error"}`;
@@ -121,7 +121,7 @@ export const useHaSocket = () => {
 	}, []);
 
 	useEffect(() => {
-		if (!accessToken || !haUrl) {
+		if (!accessToken || !haWebsocketUrl) {
 			return; // Wait for token and URL to be fetched
 		}
 
@@ -129,7 +129,7 @@ export const useHaSocket = () => {
 
 		try {
 			// Build WebSocket URL from the Home Assistant base URL
-			const wsUrl = buildWebSocketUrl(haUrl);
+			const wsUrl = buildWebSocketUrl(haWebsocketUrl);
 			console.log("Connecting to Home Assistant WebSocket:", wsUrl);
 			webSocket = new WebSocket(wsUrl);
 			setWebSocketRef(webSocket);
@@ -217,7 +217,7 @@ export const useHaSocket = () => {
 			setError(errorMsg);
 			setIsConnected(false);
 		}
-	}, [accessToken, haUrl]);
+	}, [accessToken, haWebsocketUrl]);
 
 	useEffect(() => {
 		if (devices.size && entities.size && areas.size) {

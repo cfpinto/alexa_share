@@ -31,6 +31,7 @@ panel_admin: false
 
 # API access (only if you actually call these APIs)
 hassio_api: true
+hassio_role: "manager"
 homeassistant_api: true
 
 # Folders
@@ -40,5 +41,9 @@ map:
 
 homeassistant: "2023.0.0"
 
-options: {}
-schema: {}
+options:
+  ha_websocket_url: "http://supervisor/core/websocket"
+  ha_access_token: ""
+schema:
+  ha_websocket_url: url
+  ha_access_token: password
