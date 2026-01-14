@@ -41,7 +41,7 @@ describe("ha-config.util", () => {
 
 			expect(result).toBe(mockContent);
 			expect(fs.readFile).toHaveBeenCalledWith(
-				"/config/configuration.yaml",
+				"/homeassistant/configuration.yaml",
 				"utf-8",
 			);
 		});
@@ -52,7 +52,7 @@ describe("ha-config.util", () => {
 			vi.mocked(fs.readFile).mockRejectedValue(error);
 
 			await expect(readHAConfig()).rejects.toThrow(
-				"Configuration file not found at /config/configuration.yaml",
+				"Configuration file not found at /homeassistant/configuration.yaml",
 			);
 		});
 
@@ -212,8 +212,8 @@ describe("ha-config.util", () => {
 			await createBackup();
 
 			expect(fs.copyFile).toHaveBeenCalledWith(
-				"/config/configuration.yaml",
-				"/config/configuration.yaml.backup",
+				"/homeassistant/configuration.yaml",
+				"/homeassistant/configuration.yaml.backup",
 			);
 		});
 
@@ -236,7 +236,7 @@ describe("ha-config.util", () => {
 			await writeHAConfig(content);
 
 			expect(fs.writeFile).toHaveBeenCalledWith(
-				"/config/configuration.yaml",
+				"/homeassistant/configuration.yaml",
 				content,
 				"utf-8",
 			);
@@ -281,12 +281,12 @@ describe("ha-config.util", () => {
 			});
 
 			expect(fs.readFile).toHaveBeenCalledWith(
-				"/config/configuration.yaml",
+				"/homeassistant/configuration.yaml",
 				"utf-8",
 			);
 			expect(fs.copyFile).toHaveBeenCalledWith(
-				"/config/configuration.yaml",
-				"/config/configuration.yaml.backup",
+				"/homeassistant/configuration.yaml",
+				"/homeassistant/configuration.yaml.backup",
 			);
 			expect(fs.writeFile).toHaveBeenCalled();
 		});
@@ -309,7 +309,7 @@ describe("ha-config.util", () => {
 			vi.mocked(fs.readFile).mockRejectedValue(error);
 
 			await expect(updateAlexaConfiguration(entityIds)).rejects.toThrow(
-				"Configuration file not found at /config/configuration.yaml",
+				"Configuration file not found at /homeassistant/configuration.yaml",
 			);
 		});
 

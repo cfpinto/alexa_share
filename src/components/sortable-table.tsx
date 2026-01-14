@@ -100,8 +100,7 @@ function getColumnValue(item: Row, column: CompositeColumn) {
 	return (
 		<Typography
 			variant="small"
-			color="blue-gray"
-			className="font-normal opacity-70"
+			className="font-normal text-ha-light-text-secondary dark:text-ha-dark-text-secondary"
 		>
 			{value}
 		</Typography>
@@ -110,22 +109,26 @@ function getColumnValue(item: Row, column: CompositeColumn) {
 
 export function SortableTable({ columns, data, onSort }: Props) {
 	return (
-		<table className="mt-4 w-full min-w-max table-auto text-left">
+		<table className="mt-4 w-full min-w-max table-auto text-left text-ha-light-text dark:text-ha-dark-text">
 			<thead>
 				<tr>
 					{normalizeHeader(columns).map((head) => (
 						<th
 							key={head.key}
-							className={`border-y border-blue-gray-100 bg-blue-gray-50/50 p-4 transition-colors`}
+							className={`border-y border-ha-light-divider dark:border-ha-dark-divider bg-ha-light-sidebar/50 dark:bg-ha-dark-sidebar/50 p-4 transition-colors`}
 						>
 							<Typography
 								variant="small"
 								color="blue-gray"
-								className="flex items-center justify-between gap-2 font-normal leading-none opacity-70"
+								className="flex items-center justify-between gap-2 font-normal leading-none text-ha-light-text-secondary dark:text-ha-dark-text-secondary"
 							>
 								{head.label}{" "}
 								{isColumnSortable(head) && (
-									<IconButton variant="text" onClick={() => onSort?.(head.key)}>
+									<IconButton
+										variant="text"
+										onClick={() => onSort?.(head.key)}
+										className="text-ha-primary"
+									>
 										<ChevronUpDownIcon strokeWidth={2} className="h-4 w-4" />
 									</IconButton>
 								)}
@@ -137,7 +140,9 @@ export function SortableTable({ columns, data, onSort }: Props) {
 			<tbody>
 				{data?.map((item, index) => {
 					const isLast = index === data.length - 1;
-					const classes = isLast ? "p-4" : "p-4 border-b border-blue-gray-50";
+					const classes = isLast
+						? "p-4"
+						: "p-4 border-b border-ha-light-divider dark:border-ha-dark-divider";
 
 					return (
 						<tr key={item.id}>

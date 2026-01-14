@@ -1,9 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { getAddonOptions } from "@/utils/addon-options.util";
 
 type SuccessResponse = {
 	success: true;
 	accessToken: string;
-	haUrl: string;
+	haWebsocketUrl: string;
 };
 
 type ErrorResponse = {
@@ -15,7 +16,6 @@ type Response = SuccessResponse | ErrorResponse;
 
 /**
  * API endpoint to retrieve Home Assistant configuration (access token and base URL)
- * This endpoint reads the SUPERVISOR_TOKEN and HA_URL from the server environment
  */
 export default async function handler(
 	req: NextApiRequest,
@@ -30,25 +30,20 @@ export default async function handler(
 	}
 
 	try {
-		// Get the access token from environment variable
-		const accessToken = process.env.SUPERVISOR_TOKEN;
-
-		if (!accessToken) {
-			return res.status(500).json({
-				success: false,
-				error: "SUPERVISOR_TOKEN environment variable is not set",
-			});
-		}
-
-		// Get the Home Assistant URL from environment variable
-		// Default to homeassistant.local if not set
-		const haUrl = process.env.HA_URL || "http://homeassistant.local:8123";
+		// Get the Home Assistant URL from addon options
+		const options = await getAddonOptions();
+		const haWebsocketUrl =
+			options.haWebsocketUrl ??
+			process.env.WEBSOCKET_URL ??
+			"http://supervisor/core/websocket";
+		const accessToken =
+			options.haAccessToken ?? process.env.SUPERVISOR_TOKEN ?? "";
 
 		// Return the access token and HA URL
 		return res.status(200).json({
 			success: true,
 			accessToken: accessToken.trim(),
-			haUrl: haUrl.trim(),
+			haWebsocketUrl: haWebsocketUrl.trim(),
 		});
 	} catch (error) {
 		console.error("Error retrieving access token:", error);

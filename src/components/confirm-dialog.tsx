@@ -23,19 +23,19 @@ export type ConfirmDialogProps = {
 const variantConfig = {
 	default: {
 		color: "blue",
-		iconColor: "text-blue-500",
+		iconColor: "text-ha-info",
 	},
 	danger: {
 		color: "red",
-		iconColor: "text-red-500",
+		iconColor: "text-ha-error",
 	},
 	warning: {
 		color: "orange",
-		iconColor: "text-orange-500",
+		iconColor: "text-ha-warning",
 	},
 	success: {
 		color: "green",
-		iconColor: "text-green-500",
+		iconColor: "text-ha-success",
 	},
 } as const;
 
@@ -53,20 +53,36 @@ export function ConfirmDialog({
 	const config = variantConfig[variant];
 
 	return (
-		<Dialog open={open} handler={onCancel} size="sm">
-			<DialogHeader className="flex items-center gap-3">
+		<Dialog
+			open={open}
+			handler={onCancel}
+			size="sm"
+			className="bg-ha-light-card dark:bg-ha-dark-card"
+		>
+			<DialogHeader className="flex items-center gap-3 text-ha-light-text dark:text-ha-dark-text">
 				<ExclamationTriangleIcon className={`h-6 w-6 ${config.iconColor}`} />
-				<Typography variant="h5" color="blue-gray">
+				<Typography
+					variant="h5"
+					className="text-ha-light-text dark:text-ha-dark-text"
+				>
 					{title}
 				</Typography>
 			</DialogHeader>
 			<DialogBody>
-				<Typography variant="paragraph" color="gray" className="font-normal">
+				<Typography
+					variant="paragraph"
+					className="font-normal text-ha-light-text-secondary dark:text-ha-dark-text-secondary"
+				>
 					{message}
 				</Typography>
 			</DialogBody>
 			<DialogFooter className="gap-2">
-				<Button variant="outlined" onClick={onCancel} disabled={isLoading}>
+				<Button
+					variant="outlined"
+					onClick={onCancel}
+					disabled={isLoading}
+					className="border-ha-light-divider dark:border-ha-dark-divider text-ha-light-text dark:text-ha-dark-text"
+				>
 					{cancelText}
 				</Button>
 				<Button color={config.color} onClick={onConfirm} disabled={isLoading}>
