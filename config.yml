@@ -45,6 +45,17 @@ homeassistant: "2023.0.0"
 options:
   ha_websocket_url: "http://supervisor/core/websocket"
   ha_access_token: ""
+  ha_entity_domains:
+    - "switch"
+    - "scene"
+    - "sensor"
+    - "binary_sensor"
+    - "light"
+    - "climate"
+    - "button"
+    - "automation"
 schema:
   ha_websocket_url: url
   ha_access_token: password
+  ha_entity_domains:
+    - str

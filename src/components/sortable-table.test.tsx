@@ -232,4 +232,27 @@ describe("SortableTable", () => {
 		const rows = container.querySelectorAll("tbody tr");
 		expect(rows).toHaveLength(3);
 	});
+
+	it("should render nothing for inline column with non-boolean value", () => {
+		const dataWithStringStatus: Row[] = [
+			{ id: "1", name: "John", status: "active" },
+			{ id: "2", name: "Jane", status: "inactive" },
+		];
+		const columns: Column[] = [
+			{ label: "Name", key: "name" },
+			{ label: "Status", key: "status", inline: true },
+		];
+
+		const { container } = render(
+			<SortableTable columns={columns} data={dataWithStringStatus} />,
+		);
+
+		// Should not render any switches since status is a string, not boolean
+		const switches = container.querySelectorAll('input[type="checkbox"]');
+		expect(switches).toHaveLength(0);
+
+		// The status column cells should exist but be empty (no switch, no text)
+		const rows = container.querySelectorAll("tbody tr");
+		expect(rows).toHaveLength(2);
+	});
 });

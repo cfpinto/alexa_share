@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { HaConfig } from "@/types/home-assistant.types";
 import {
 	createBackup,
+	dumpYAML,
+	HACustomTag,
 	parseYAML,
 	readHAConfig,
 	updateAlexaConfig,
@@ -94,6 +96,144 @@ describe("ha-config.util", () => {
 				"alexa:\n  smart_home:\n    - invalid:\n  - structure";
 
 			expect(() => parseYAML(invalidYaml)).toThrow("Failed to parse YAML");
+		});
+
+		it("should handle !include custom tag", () => {
+			const yamlContent = "automations: !include automations.yaml";
+			const result = parseYAML(yamlContent);
+
+			expect(result.automations).toBeInstanceOf(HACustomTag);
+			expect((result.automations as HACustomTag).tag).toBe("!include");
+			expect((result.automations as HACustomTag).value).toBe(
+				"automations.yaml",
+			);
+		});
+
+		it("should handle !secret custom tag", () => {
+			const yamlContent = "api_key: !secret my_api_key";
+			const result = parseYAML(yamlContent);
+
+			expect(result.api_key).toBeInstanceOf(HACustomTag);
+			expect((result.api_key as HACustomTag).tag).toBe("!secret");
+			expect((result.api_key as HACustomTag).value).toBe("my_api_key");
+		});
+
+		it("should handle !env_var custom tag", () => {
+			const yamlContent = "database_url: !env_var DB_URL";
+			const result = parseYAML(yamlContent);
+
+			expect(result.database_url).toBeInstanceOf(HACustomTag);
+			expect((result.database_url as HACustomTag).tag).toBe("!env_var");
+			expect((result.database_url as HACustomTag).value).toBe("DB_URL");
+		});
+
+		it("should handle !input custom tag", () => {
+			const yamlContent = "target_temp: !input target_temperature";
+			const result = parseYAML(yamlContent);
+
+			expect(result.target_temp).toBeInstanceOf(HACustomTag);
+			expect((result.target_temp as HACustomTag).tag).toBe("!input");
+			expect((result.target_temp as HACustomTag).value).toBe(
+				"target_temperature",
+			);
+		});
+
+		it("should handle !include_dir_list custom tag", () => {
+			const yamlContent = "sensors: !include_dir_list sensors/";
+			const result = parseYAML(yamlContent);
+
+			expect(result.sensors).toBeInstanceOf(HACustomTag);
+			expect((result.sensors as HACustomTag).tag).toBe("!include_dir_list");
+			expect((result.sensors as HACustomTag).value).toBe("sensors/");
+		});
+
+		it("should handle !include_dir_named custom tag", () => {
+			const yamlContent = "scripts: !include_dir_named scripts/";
+			const result = parseYAML(yamlContent);
+
+			expect(result.scripts).toBeInstanceOf(HACustomTag);
+			expect((result.scripts as HACustomTag).tag).toBe("!include_dir_named");
+			expect((result.scripts as HACustomTag).value).toBe("scripts/");
+		});
+
+		it("should handle !include_dir_merge_list custom tag", () => {
+			const yamlContent = "scenes: !include_dir_merge_list scenes/";
+			const result = parseYAML(yamlContent);
+
+			expect(result.scenes).toBeInstanceOf(HACustomTag);
+			expect((result.scenes as HACustomTag).tag).toBe(
+				"!include_dir_merge_list",
+			);
+			expect((result.scenes as HACustomTag).value).toBe("scenes/");
+		});
+
+		it("should handle !include_dir_merge_named custom tag", () => {
+			const yamlContent = "packages: !include_dir_merge_named packages/";
+			const result = parseYAML(yamlContent);
+
+			expect(result.packages).toBeInstanceOf(HACustomTag);
+			expect((result.packages as HACustomTag).tag).toBe(
+				"!include_dir_merge_named",
+			);
+			expect((result.packages as HACustomTag).value).toBe("packages/");
+		});
+
+		it("should handle multiple custom tags in same file", () => {
+			const yamlContent = `
+homeassistant:
+  customize: !include customize.yaml
+  packages: !include_dir_named packages/
+alexa:
+  api_key: !secret alexa_api_key
+automation: !include_dir_merge_list automations/`;
+			const result = parseYAML(yamlContent) as Record<string, unknown>;
+			const homeassistant = result.homeassistant as Record<string, unknown>;
+			const alexa = result.alexa as Record<string, unknown>;
+
+			expect(homeassistant.customize).toBeInstanceOf(HACustomTag);
+			expect((homeassistant.customize as HACustomTag).tag).toBe("!include");
+			expect(homeassistant.packages).toBeInstanceOf(HACustomTag);
+			expect((homeassistant.packages as HACustomTag).tag).toBe(
+				"!include_dir_named",
+			);
+			expect(alexa.api_key).toBeInstanceOf(HACustomTag);
+			expect((alexa.api_key as HACustomTag).tag).toBe("!secret");
+			expect(result.automation).toBeInstanceOf(HACustomTag);
+			expect((result.automation as HACustomTag).tag).toBe(
+				"!include_dir_merge_list",
+			);
+		});
+
+		it("should roundtrip custom tags correctly when dumped", () => {
+			const yamlContent = "automations: !include automations.yaml";
+			const parsed = parseYAML(yamlContent);
+			const dumped = dumpYAML(parsed);
+
+			expect(dumped.trim()).toBe("automations: !include automations.yaml");
+		});
+
+		it("should roundtrip all custom tag types correctly", () => {
+			const yamlContent = `
+homeassistant:
+  customize: !include customize.yaml
+  packages: !include_dir_named packages/
+api_key: !secret my_secret
+env_value: !env_var MY_VAR
+input_val: !input my_input
+sensors: !include_dir_list sensors/
+scenes: !include_dir_merge_list scenes/
+merged: !include_dir_merge_named merged/`;
+			const parsed = parseYAML(yamlContent);
+			const dumped = dumpYAML(parsed);
+
+			expect(dumped).toContain("!include customize.yaml");
+			expect(dumped).toContain("!include_dir_named packages/");
+			expect(dumped).toContain("!secret my_secret");
+			expect(dumped).toContain("!env_var MY_VAR");
+			expect(dumped).toContain("!input my_input");
+			expect(dumped).toContain("!include_dir_list sensors/");
+			expect(dumped).toContain("!include_dir_merge_list scenes/");
+			expect(dumped).toContain("!include_dir_merge_named merged/");
 		});
 	});
 

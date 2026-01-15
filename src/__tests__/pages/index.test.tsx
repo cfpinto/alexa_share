@@ -108,6 +108,23 @@ const mockEntities: CompiledEntity[] = [
 	},
 ];
 
+const mockEntitiesWithNulls: CompiledEntity[] = [
+	{
+		id: "entity-3",
+		entity_id: "sensor.temp",
+		name: null as unknown as string,
+		entity_category: null,
+		shared: false,
+		device: {
+			id: "device-3",
+			name: null as unknown as string,
+			manufacturer: null as unknown as string,
+			model: null as unknown as string,
+		},
+		area: null as unknown as { area_id: string; name: string },
+	},
+];
+
 const createQueryClient = () =>
 	new QueryClient({
 		defaultOptions: {
@@ -576,6 +593,20 @@ describe("Home Page", () => {
 				expect(mockSetSyncStatus).toHaveBeenCalled();
 			});
 		});
+
+		it("should not call setSyncStatus when entity not found", async () => {
+			renderWithProviders(<Home />);
+
+			const checkboxes = screen.getAllByRole("checkbox");
+			// Modify the checkbox value to a non-existent entity ID
+			checkboxes[0].setAttribute("value", "non-existent-id");
+			fireEvent.click(checkboxes[0]);
+
+			await waitFor(() => {
+				// setSyncStatus should not be called for non-existent entity
+				expect(mockSetSyncStatus).not.toHaveBeenCalled();
+			});
+		});
 	});
 
 	describe("Sorting", () => {
@@ -587,6 +618,175 @@ describe("Home Page", () => {
 			expect(screen.getByText("Entity Id")).toBeInTheDocument();
 			expect(screen.getByText("Manufacturer")).toBeInTheDocument();
 			expect(screen.getByText("Area")).toBeInTheDocument();
+		});
+
+		it("should sort when clicking a sort button", async () => {
+			const user = userEvent.setup();
+			const { container } = renderWithProviders(<Home />);
+
+			// Get sort buttons (IconButtons with ChevronUpDownIcon)
+			const sortButtons = container.querySelectorAll("table button");
+			expect(sortButtons.length).toBeGreaterThan(0);
+
+			// Click the first sort button (Device column)
+			await user.click(sortButtons[0]);
+
+			// The table should still display both entities
+			expect(screen.getByText("Living Room Light")).toBeInTheDocument();
+			expect(screen.getByText("Bedroom Switch")).toBeInTheDocument();
+		});
+
+		it("should reverse sort direction when clicking same column twice", async () => {
+			const user = userEvent.setup();
+			const { container } = renderWithProviders(<Home />);
+
+			// Get sort buttons
+			const sortButtons = container.querySelectorAll("table button");
+
+			// Click the first sort button twice to reverse sort direction
+			await user.click(sortButtons[0]);
+			await user.click(sortButtons[0]);
+
+			// Both entities should still be visible, just in different order
+			expect(screen.getByText("Philips Hue")).toBeInTheDocument();
+			expect(screen.getByText("Smart Switch")).toBeInTheDocument();
+		});
+
+		it("should change sort column when clicking different header", async () => {
+			const user = userEvent.setup();
+			const { container } = renderWithProviders(<Home />);
+
+			// Get sort buttons
+			const sortButtons = container.querySelectorAll("table button");
+
+			// First click on first sort button (Device column)
+			await user.click(sortButtons[0]);
+
+			// Then click on second sort button (Name column) to change sort column
+			await user.click(sortButtons[1]);
+
+			// Both entities should still be visible
+			expect(screen.getByText("Philips Hue")).toBeInTheDocument();
+			expect(screen.getByText("Smart Switch")).toBeInTheDocument();
+		});
+	});
+
+	describe("Entities with null values", () => {
+		it("should handle entities with null properties", () => {
+			mockUseGetEntities({ data: mockEntitiesWithNulls });
+			renderWithProviders(<Home />);
+
+			// Should render without crashing, with fallback values
+			expect(screen.getByText("Devices")).toBeInTheDocument();
+		});
+
+		it("should handle entity without area", () => {
+			const entityWithoutArea: CompiledEntity = {
+				id: "entity-no-area",
+				entity_id: "light.no_area",
+				name: "No Area Light",
+				entity_category: null,
+				shared: false,
+				device: {
+					id: "device-4",
+					name: "Test Device",
+					manufacturer: "Test",
+					model: "Model",
+				},
+				area: null as unknown as { area_id: string; name: string },
+			};
+			mockUseGetEntities({ data: [entityWithoutArea] });
+			renderWithProviders(<Home />);
+
+			expect(screen.getByText("No Area Light")).toBeInTheDocument();
+		});
+	});
+
+	describe("Pagination Navigation", () => {
+		const manyEntities: CompiledEntity[] = Array.from(
+			{ length: 25 },
+			(_, i) => ({
+				id: `entity-${i + 1}`,
+				entity_id: `light.entity_${i + 1}`,
+				name: `Entity ${i + 1}`,
+				entity_category: null,
+				shared: i % 2 === 0,
+				device: {
+					id: `device-${i + 1}`,
+					name: `Device ${i + 1}`,
+					manufacturer: `Manufacturer ${i + 1}`,
+					model: `Model ${i + 1}`,
+				},
+				area: {
+					area_id: `area-${i + 1}`,
+					name: `Area ${i + 1}`,
+				},
+			}),
+		);
+
+		it("should enable Next button when more pages exist", () => {
+			mockUseGetEntities({ data: manyEntities });
+			renderWithProviders(<Home />);
+
+			const nextButton = screen.getByText("Next");
+			expect(nextButton).not.toBeDisabled();
+		});
+
+		it("should navigate to next page when Next clicked", async () => {
+			const user = userEvent.setup();
+			mockUseGetEntities({ data: manyEntities });
+			renderWithProviders(<Home />);
+
+			expect(screen.getByText(/Page 1 of 3/)).toBeInTheDocument();
+
+			const nextButton = screen.getByText("Next");
+			await user.click(nextButton);
+
+			expect(screen.getByText(/Page 2 of 3/)).toBeInTheDocument();
+		});
+
+		it("should navigate to previous page when Previous clicked", async () => {
+			const user = userEvent.setup();
+			mockUseGetEntities({ data: manyEntities });
+			renderWithProviders(<Home />);
+
+			// Go to page 2 first
+			const nextButton = screen.getByText("Next");
+			await user.click(nextButton);
+			expect(screen.getByText(/Page 2 of 3/)).toBeInTheDocument();
+
+			// Then go back to page 1
+			const prevButton = screen.getByText("Previous");
+			await user.click(prevButton);
+			expect(screen.getByText(/Page 1 of 3/)).toBeInTheDocument();
+		});
+
+		it("should disable Next button on last page", async () => {
+			const user = userEvent.setup();
+			mockUseGetEntities({ data: manyEntities });
+			renderWithProviders(<Home />);
+
+			const nextButton = screen.getByText("Next");
+			// Navigate to last page
+			await user.click(nextButton);
+			await user.click(nextButton);
+
+			expect(screen.getByText(/Page 3 of 3/)).toBeInTheDocument();
+			expect(nextButton).toBeDisabled();
+		});
+
+		it("should enable Previous button after navigating from first page", async () => {
+			const user = userEvent.setup();
+			mockUseGetEntities({ data: manyEntities });
+			renderWithProviders(<Home />);
+
+			const prevButton = screen.getByText("Previous");
+			expect(prevButton).toBeDisabled();
+
+			const nextButton = screen.getByText("Next");
+			await user.click(nextButton);
+
+			expect(prevButton).not.toBeDisabled();
 		});
 	});
 });

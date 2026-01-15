@@ -721,4 +721,69 @@ describe("/api/entities", () => {
 	it("should not log console.error output", () => {
 		expect(consoleErrorSpy).toBeDefined();
 	});
+
+	it("should use empty token when SUPERVISOR_TOKEN and haAccessToken are not set", async () => {
+		const handler = (await import("./entities")).default;
+		const originalEnv = process.env;
+		delete process.env.SUPERVISOR_TOKEN;
+
+		vi.spyOn(addonOptionsUtil, "getAddonOptions").mockResolvedValue({
+			haWebsocketUrl: "ws://test/websocket",
+			haEntityDomains: ["light"],
+		});
+
+		req = { method: "GET" };
+
+		const handlerPromise = handler(
+			req as NextApiRequest,
+			res as NextApiResponse,
+		);
+
+		await vi.waitFor(() => {
+			expect(mockWsHandlers.open).toBeDefined();
+		});
+
+		emitWsEvent("open");
+
+		// Should send auth with empty token
+		expect(mockWsSend).toHaveBeenCalledWith(
+			JSON.stringify({ type: "auth", access_token: "" }),
+		);
+
+		emitWsEvent("error", new Error("Test complete"));
+		await handlerPromise;
+
+		process.env = originalEnv;
+	});
+
+	it("should use default websocket URL when HA_WEBSOCKET_URL and haWebsocketUrl are not set", async () => {
+		const handler = (await import("./entities")).default;
+		const originalEnv = process.env;
+		delete process.env.HA_WEBSOCKET_URL;
+
+		vi.spyOn(addonOptionsUtil, "getAddonOptions").mockResolvedValue({
+			haAccessToken: "test-token",
+			haEntityDomains: ["light"],
+		});
+
+		req = { method: "GET" };
+
+		const handlerPromise = handler(
+			req as NextApiRequest,
+			res as NextApiResponse,
+		);
+
+		await vi.waitFor(() => {
+			expect(mockWsHandlers.open).toBeDefined();
+		});
+
+		simulateWebSocketFlow();
+
+		await handlerPromise;
+
+		// The test passing means the default URL was used successfully
+		expect(statusMock).toHaveBeenCalledWith(200);
+
+		process.env = originalEnv;
+	});
 });

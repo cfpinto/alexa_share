@@ -48,4 +48,4 @@ export const isValidEntity =
 		!!item &&
 		typeof item === "object" &&
 		Object.hasOwn(item, "entity_id") &&
-		domains.includes((item as Entity).entity_id.split(".").shift() ?? "");
+		domains.includes((item as Entity).entity_id.split(".")[0]);
