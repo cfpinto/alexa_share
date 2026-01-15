@@ -21,6 +21,9 @@ addon_config/
 coverage/
 *.lcov
 .vitest
+.e2e-mock/
+playwright-report/
+test-results/
 
 # Build artifacts
 dist/

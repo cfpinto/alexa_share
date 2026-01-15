@@ -49,8 +49,7 @@ const HA_YAML_SCHEMA = yaml.DEFAULT_SCHEMA.extend([
  */
 export async function readHAConfig(): Promise<string> {
 	try {
-		const content = await fs.readFile(CONFIG_PATH, "utf-8");
-		return content;
+		return await fs.readFile(CONFIG_PATH, "utf-8");
 	} catch (error) {
 		if ((error as NodeJS.ErrnoException).code === "ENOENT") {
 			throw new Error(`Configuration file not found at ${CONFIG_PATH}`);
