@@ -2,7 +2,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type React from "react";
-import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	type Mock,
+	vi,
+} from "vitest";
 import type { CompiledEntity } from "@/types/items.types";
 
 const mockToastSuccess = vi.fn();
@@ -35,19 +43,18 @@ type MockUseGetEntitiesReturn = {
 
 const createMockUseGetEntities = (
 	overrides: Partial<MockUseGetEntitiesReturn> = {},
-) =>
-	({
-		data: [] as CompiledEntity[],
-		isLoading: false,
-		isSuccess: true,
-		isError: false,
-		error: null,
-		refetch: mockRefetch,
-		setSyncStatus: mockSetSyncStatus,
-		getSyncedEntityIds: mockGetSyncedEntityIds,
-		getSyncedCount: mockGetSyncedCount,
-		...overrides,
-	});
+) => ({
+	data: [] as CompiledEntity[],
+	isLoading: false,
+	isSuccess: true,
+	isError: false,
+	error: null,
+	refetch: mockRefetch,
+	setSyncStatus: mockSetSyncStatus,
+	getSyncedEntityIds: mockGetSyncedEntityIds,
+	getSyncedCount: mockGetSyncedCount,
+	...overrides,
+});
 
 vi.mock("@/queries/use-get-entities.query", () => ({
 	useGetEntities: vi.fn(() => createMockUseGetEntities()),
@@ -60,8 +67,8 @@ vi.mock("@/mutations/use-alexa-config.mutation", () => ({
 	})),
 }));
 
-import { useGetEntities } from "@/queries/use-get-entities.query";
 import { usePublishAlexaConfig } from "@/mutations/use-alexa-config.mutation";
+import { useGetEntities } from "@/queries/use-get-entities.query";
 import Home from "../../pages/index";
 
 const mockEntities: CompiledEntity[] = [
@@ -116,9 +123,13 @@ const renderWithProviders = (ui: React.ReactElement) => {
 	);
 };
 
-const mockUseGetEntities = (overrides: Partial<MockUseGetEntitiesReturn> = {}) => {
+const mockUseGetEntities = (
+	overrides: Partial<MockUseGetEntitiesReturn> = {},
+) => {
 	vi.mocked(useGetEntities).mockReturnValue(
-		createMockUseGetEntities(overrides) as unknown as ReturnType<typeof useGetEntities>,
+		createMockUseGetEntities(overrides) as unknown as ReturnType<
+			typeof useGetEntities
+		>,
 	);
 };
 
@@ -410,9 +421,7 @@ describe("Home Page", () => {
 			const publishButton = screen.getByText("Publish Changes");
 			await user.click(publishButton);
 
-			expect(
-				screen.getByText("Publish Changes to Alexa?"),
-			).toBeInTheDocument();
+			expect(screen.getByText("Publish Changes to Alexa?")).toBeInTheDocument();
 		});
 
 		it("should show entity count in confirm dialog", async () => {
@@ -470,9 +479,7 @@ describe("Home Page", () => {
 			const publishButton = screen.getByText("Publish Changes");
 			await user.click(publishButton);
 
-			expect(
-				screen.getByText("Publish Changes to Alexa?"),
-			).toBeInTheDocument();
+			expect(screen.getByText("Publish Changes to Alexa?")).toBeInTheDocument();
 
 			const cancelButton = screen.getByText("Cancel");
 			await user.click(cancelButton);

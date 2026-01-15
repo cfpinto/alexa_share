@@ -1,5 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	type MockInstance,
+	vi,
+} from "vitest";
 import { MessageType, RequestTypeId } from "@/types/home-assistant.types";
 import * as addonOptionsUtil from "../../utils/addon-options.util";
 import * as haConfigUtil from "../../utils/ha-config.util";
@@ -67,12 +75,25 @@ describe("/api/entities", () => {
 		entities = [mockEntity],
 		areas = [mockArea],
 	}: {
-		devices?: typeof mockDevice[];
-		entities?: (typeof mockEntity | { id: string; entity_id: string; entity_category: null; name: string; area_id: string | null; device_id: string })[];
-		areas?: typeof mockArea[];
+		devices?: (typeof mockDevice)[];
+		entities?: (
+			| typeof mockEntity
+			| {
+					id: string;
+					entity_id: string;
+					entity_category: null;
+					name: string;
+					area_id: string | null;
+					device_id: string;
+			  }
+		)[];
+		areas?: (typeof mockArea)[];
 	} = {}) => {
 		emitWsEvent("open");
-		emitWsEvent("message", Buffer.from(JSON.stringify({ type: MessageType.AUTH_OK })));
+		emitWsEvent(
+			"message",
+			Buffer.from(JSON.stringify({ type: MessageType.AUTH_OK })),
+		);
 		emitWsEvent(
 			"message",
 			Buffer.from(
@@ -176,7 +197,10 @@ describe("/api/entities", () => {
 		const handler = (await import("./entities")).default;
 		req = { method: "GET" };
 
-		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+		const handlerPromise = handler(
+			req as NextApiRequest,
+			res as NextApiResponse,
+		);
 
 		await vi.waitFor(() => {
 			expect(mockWsHandlers.open).toBeDefined();
@@ -225,7 +249,10 @@ describe("/api/entities", () => {
 			},
 		});
 
-		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+		const handlerPromise = handler(
+			req as NextApiRequest,
+			res as NextApiResponse,
+		);
 
 		await vi.waitFor(() => {
 			expect(mockWsHandlers.open).toBeDefined();
@@ -253,7 +280,10 @@ describe("/api/entities", () => {
 		const handler = (await import("./entities")).default;
 		req = { method: "GET" };
 
-		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+		const handlerPromise = handler(
+			req as NextApiRequest,
+			res as NextApiResponse,
+		);
 
 		await vi.waitFor(() => {
 			expect(mockWsHandlers.error).toBeDefined();
@@ -279,7 +309,10 @@ describe("/api/entities", () => {
 			device_id: "non-existent-device",
 		};
 
-		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+		const handlerPromise = handler(
+			req as NextApiRequest,
+			res as NextApiResponse,
+		);
 
 		await vi.waitFor(() => {
 			expect(mockWsHandlers.open).toBeDefined();
@@ -316,7 +349,10 @@ describe("/api/entities", () => {
 			area_id: null,
 		};
 
-		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+		const handlerPromise = handler(
+			req as NextApiRequest,
+			res as NextApiResponse,
+		);
 
 		await vi.waitFor(() => {
 			expect(mockWsHandlers.open).toBeDefined();
@@ -353,7 +389,10 @@ describe("/api/entities", () => {
 
 		req = { method: "GET" };
 
-		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+		const handlerPromise = handler(
+			req as NextApiRequest,
+			res as NextApiResponse,
+		);
 
 		await vi.waitFor(() => {
 			expect(mockWsHandlers.open).toBeDefined();
@@ -390,23 +429,27 @@ describe("/api/entities", () => {
 			device_id: "device-1",
 		};
 
-		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+		const handlerPromise = handler(
+			req as NextApiRequest,
+			res as NextApiResponse,
+		);
 
 		await vi.waitFor(() => {
 			expect(mockWsHandlers.open).toBeDefined();
 		});
 
-		simulateWebSocketFlow({ entities: [mockEntity, switchEntity, sensorEntity] });
+		simulateWebSocketFlow({
+			entities: [mockEntity, switchEntity, sensorEntity],
+		});
 
 		await handlerPromise;
 
 		expect(statusMock).toHaveBeenCalledWith(200);
 		const responseData = jsonMock.mock.calls[0][0];
 		expect(responseData.data).toHaveLength(2);
-		expect(responseData.data.map((e: { entity_id: string }) => e.entity_id)).toEqual([
-			"light.living_room",
-			"switch.bedroom",
-		]);
+		expect(
+			responseData.data.map((e: { entity_id: string }) => e.entity_id),
+		).toEqual(["light.living_room", "switch.bedroom"]);
 	});
 
 	it("should handle getAddonOptions errors", async () => {
@@ -447,7 +490,10 @@ describe("/api/entities", () => {
 		const handler = (await import("./entities")).default;
 		req = { method: "GET" };
 
-		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+		const handlerPromise = handler(
+			req as NextApiRequest,
+			res as NextApiResponse,
+		);
 
 		await vi.waitFor(() => {
 			expect(mockWsHandlers.open).toBeDefined();
@@ -468,14 +514,20 @@ describe("/api/entities", () => {
 		const handler = (await import("./entities")).default;
 		req = { method: "GET" };
 
-		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+		const handlerPromise = handler(
+			req as NextApiRequest,
+			res as NextApiResponse,
+		);
 
 		await vi.waitFor(() => {
 			expect(mockWsHandlers.open).toBeDefined();
 		});
 
 		emitWsEvent("open");
-		emitWsEvent("message", Buffer.from(JSON.stringify({ type: MessageType.AUTH_OK })));
+		emitWsEvent(
+			"message",
+			Buffer.from(JSON.stringify({ type: MessageType.AUTH_OK })),
+		);
 
 		expect(mockWsSend).toHaveBeenCalledWith(
 			JSON.stringify({
@@ -505,7 +557,10 @@ describe("/api/entities", () => {
 		const handler = (await import("./entities")).default;
 		req = { method: "GET" };
 
-		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+		const handlerPromise = handler(
+			req as NextApiRequest,
+			res as NextApiResponse,
+		);
 
 		await vi.waitFor(() => {
 			expect(mockWsHandlers.open).toBeDefined();
@@ -522,7 +577,10 @@ describe("/api/entities", () => {
 		const handler = (await import("./entities")).default;
 		req = { method: "GET" };
 
-		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+		const handlerPromise = handler(
+			req as NextApiRequest,
+			res as NextApiResponse,
+		);
 
 		await vi.waitFor(() => {
 			expect(mockWsHandlers.open).toBeDefined();
@@ -531,7 +589,10 @@ describe("/api/entities", () => {
 		const encoder = new TextEncoder();
 
 		emitWsEvent("open");
-		emitWsEvent("message", encoder.encode(JSON.stringify({ type: MessageType.AUTH_OK })));
+		emitWsEvent(
+			"message",
+			encoder.encode(JSON.stringify({ type: MessageType.AUTH_OK })),
+		);
 		emitWsEvent(
 			"message",
 			encoder.encode(
@@ -572,14 +633,19 @@ describe("/api/entities", () => {
 		const handler = (await import("./entities")).default;
 		req = { method: "GET" };
 
-		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+		const handlerPromise = handler(
+			req as NextApiRequest,
+			res as NextApiResponse,
+		);
 
 		await vi.waitFor(() => {
 			expect(mockWsHandlers.open).toBeDefined();
 		});
 
 		emitWsEvent("open");
-		emitWsEvent("message", [Buffer.from(JSON.stringify({ type: MessageType.AUTH_OK }))]);
+		emitWsEvent("message", [
+			Buffer.from(JSON.stringify({ type: MessageType.AUTH_OK })),
+		]);
 		emitWsEvent("message", [
 			Buffer.from(
 				JSON.stringify({
@@ -631,7 +697,10 @@ describe("/api/entities", () => {
 			device_id: "device-1",
 		};
 
-		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+		const handlerPromise = handler(
+			req as NextApiRequest,
+			res as NextApiResponse,
+		);
 
 		await vi.waitFor(() => {
 			expect(mockWsHandlers.open).toBeDefined();
@@ -644,9 +713,9 @@ describe("/api/entities", () => {
 		expect(statusMock).toHaveBeenCalledWith(200);
 		const responseData = jsonMock.mock.calls[0][0];
 		expect(responseData.data).toHaveLength(2);
-		expect(responseData.data.map((e: { entity_id: string }) => e.entity_id)).toContain(
-			"automation.morning_routine",
-		);
+		expect(
+			responseData.data.map((e: { entity_id: string }) => e.entity_id),
+		).toContain("automation.morning_routine");
 	});
 
 	it("should not log console.error output", () => {
