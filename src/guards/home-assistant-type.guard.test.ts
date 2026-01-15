@@ -8,6 +8,7 @@ import {
 	RequestTypeId,
 } from "@/types/home-assistant.types";
 import {
+	DOMAINS,
 	isAreaResult,
 	isAuthOk,
 	isAuthRequired,
@@ -203,7 +204,7 @@ describe("home-assistant-type.guard", () => {
 				device_id: "device1",
 			};
 
-			expect(isValidEntity(entity)).toBe(true);
+			expect(isValidEntity(DOMAINS)(entity)).toBe(true);
 		});
 
 		it("should return true for valid light entity", () => {
@@ -216,7 +217,7 @@ describe("home-assistant-type.guard", () => {
 				device_id: "device2",
 			};
 
-			expect(isValidEntity(entity)).toBe(true);
+			expect(isValidEntity(DOMAINS)(entity)).toBe(true);
 		});
 
 		it("should return true for valid scene entity", () => {
@@ -224,7 +225,7 @@ describe("home-assistant-type.guard", () => {
 				entity_id: "scene.movie_time",
 			};
 
-			expect(isValidEntity(entity)).toBe(true);
+			expect(isValidEntity(DOMAINS)(entity)).toBe(true);
 		});
 
 		it("should return true for valid sensor entity", () => {
@@ -232,7 +233,7 @@ describe("home-assistant-type.guard", () => {
 				entity_id: "sensor.temperature",
 			};
 
-			expect(isValidEntity(entity)).toBe(true);
+			expect(isValidEntity(DOMAINS)(entity)).toBe(true);
 		});
 
 		it("should return true for valid binary_sensor entity", () => {
@@ -240,7 +241,7 @@ describe("home-assistant-type.guard", () => {
 				entity_id: "binary_sensor.motion",
 			};
 
-			expect(isValidEntity(entity)).toBe(true);
+			expect(isValidEntity(DOMAINS)(entity)).toBe(true);
 		});
 
 		it("should return true for valid climate entity", () => {
@@ -248,7 +249,7 @@ describe("home-assistant-type.guard", () => {
 				entity_id: "climate.thermostat",
 			};
 
-			expect(isValidEntity(entity)).toBe(true);
+			expect(isValidEntity(DOMAINS)(entity)).toBe(true);
 		});
 
 		it("should return true for valid button entity", () => {
@@ -256,7 +257,7 @@ describe("home-assistant-type.guard", () => {
 				entity_id: "button.doorbell",
 			};
 
-			expect(isValidEntity(entity)).toBe(true);
+			expect(isValidEntity(DOMAINS)(entity)).toBe(true);
 		});
 
 		it("should return true for valid automation entity", () => {
@@ -264,7 +265,7 @@ describe("home-assistant-type.guard", () => {
 				entity_id: "automation.turn_on_lights",
 			};
 
-			expect(isValidEntity(entity)).toBe(true);
+			expect(isValidEntity(DOMAINS)(entity)).toBe(true);
 		});
 
 		it("should return false for invalid domain", () => {
@@ -272,7 +273,7 @@ describe("home-assistant-type.guard", () => {
 				entity_id: "media_player.spotify",
 			};
 
-			expect(isValidEntity(entity)).toBe(false);
+			expect(isValidEntity(DOMAINS)(entity)).toBe(false);
 		});
 
 		it("should return false for entity without entity_id", () => {
@@ -281,25 +282,25 @@ describe("home-assistant-type.guard", () => {
 				name: "Test",
 			};
 
-			expect(isValidEntity(entity)).toBe(false);
+			expect(isValidEntity(DOMAINS)(entity)).toBe(false);
 		});
 
 		it("should return false for null", () => {
-			expect(isValidEntity(null)).toBe(false);
+			expect(isValidEntity(DOMAINS)(null)).toBe(false);
 		});
 
 		it("should return false for undefined", () => {
-			expect(isValidEntity(undefined)).toBe(false);
+			expect(isValidEntity(DOMAINS)(undefined)).toBe(false);
 		});
 
 		it("should return false for non-object values", () => {
-			expect(isValidEntity("string")).toBe(false);
-			expect(isValidEntity(123)).toBe(false);
-			expect(isValidEntity(true)).toBe(false);
+			expect(isValidEntity(DOMAINS)("string")).toBe(false);
+			expect(isValidEntity(DOMAINS)(123)).toBe(false);
+			expect(isValidEntity(DOMAINS)(true)).toBe(false);
 		});
 
 		it("should return false for empty object", () => {
-			expect(isValidEntity({})).toBe(false);
+			expect(isValidEntity(DOMAINS)({})).toBe(false);
 		});
 
 		it("should return false for malformed entity_id", () => {
@@ -307,7 +308,7 @@ describe("home-assistant-type.guard", () => {
 				entity_id: "invalid",
 			};
 
-			expect(isValidEntity(entity)).toBe(false);
+			expect(isValidEntity(DOMAINS)(entity)).toBe(false);
 		});
 
 		it("should return false for entity_id with empty domain", () => {
@@ -315,7 +316,7 @@ describe("home-assistant-type.guard", () => {
 				entity_id: ".living_room",
 			};
 
-			expect(isValidEntity(entity)).toBe(false);
+			expect(isValidEntity(DOMAINS)(entity)).toBe(false);
 		});
 	});
 });

@@ -1,0 +1,655 @@
+import type { NextApiRequest, NextApiResponse } from "next";
+import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MessageType, RequestTypeId } from "@/types/home-assistant.types";
+import * as addonOptionsUtil from "../../utils/addon-options.util";
+import * as haConfigUtil from "../../utils/ha-config.util";
+
+vi.mock("../../utils/addon-options.util");
+vi.mock("../../utils/ha-config.util");
+
+type WsEventCallback = (data?: unknown) => void;
+
+const mockWsSend = vi.fn();
+const mockWsClose = vi.fn();
+let mockWsHandlers: Record<string, WsEventCallback> = {};
+
+vi.mock("ws", () => ({
+	default: class MockWebSocket {
+		constructor() {
+			mockWsHandlers = {};
+		}
+		on(event: string, callback: WsEventCallback) {
+			mockWsHandlers[event] = callback;
+		}
+		send = mockWsSend;
+		close = mockWsClose;
+	},
+}));
+
+const emitWsEvent = (event: string, data?: unknown) => {
+	if (mockWsHandlers[event]) {
+		mockWsHandlers[event](data);
+	}
+};
+
+describe("/api/entities", () => {
+	let req: Partial<NextApiRequest>;
+	let res: Partial<NextApiResponse>;
+	let jsonMock: ReturnType<typeof vi.fn>;
+	let statusMock: ReturnType<typeof vi.fn>;
+	let consoleErrorSpy: MockInstance;
+
+	const mockDevice = {
+		id: "device-1",
+		name: "Test Device",
+		model: "Model X",
+		manufacturer: "Manufacturer Y",
+		area_id: "area-1",
+	};
+
+	const mockEntity = {
+		id: "entity-1",
+		entity_id: "light.living_room",
+		entity_category: null,
+		name: "Living Room Light",
+		area_id: "area-1",
+		device_id: "device-1",
+	};
+
+	const mockArea = {
+		area_id: "area-1",
+		name: "Living Room",
+		floor_id: "floor-1",
+	};
+
+	const simulateWebSocketFlow = ({
+		devices = [mockDevice],
+		entities = [mockEntity],
+		areas = [mockArea],
+	}: {
+		devices?: typeof mockDevice[];
+		entities?: (typeof mockEntity | { id: string; entity_id: string; entity_category: null; name: string; area_id: string | null; device_id: string })[];
+		areas?: typeof mockArea[];
+	} = {}) => {
+		emitWsEvent("open");
+		emitWsEvent("message", Buffer.from(JSON.stringify({ type: MessageType.AUTH_OK })));
+		emitWsEvent(
+			"message",
+			Buffer.from(
+				JSON.stringify({
+					type: MessageType.RESULT,
+					id: RequestTypeId.GET_DEVICES,
+					result: devices,
+				}),
+			),
+		);
+		emitWsEvent(
+			"message",
+			Buffer.from(
+				JSON.stringify({
+					type: MessageType.RESULT,
+					id: RequestTypeId.GET_ENTITIES,
+					result: entities,
+				}),
+			),
+		);
+		emitWsEvent(
+			"message",
+			Buffer.from(
+				JSON.stringify({
+					type: MessageType.RESULT,
+					id: RequestTypeId.GET_AREAS,
+					result: areas,
+				}),
+			),
+		);
+	};
+
+	beforeEach(() => {
+		mockWsHandlers = {};
+		mockWsSend.mockClear();
+		mockWsClose.mockClear();
+
+		jsonMock = vi.fn();
+		statusMock = vi.fn(() => ({ json: jsonMock }));
+
+		res = {
+			status: statusMock as unknown as NextApiResponse["status"],
+		};
+
+		consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+		vi.spyOn(addonOptionsUtil, "getAddonOptions").mockResolvedValue({
+			haAccessToken: "test-token",
+			haWebsocketUrl: "ws://test/websocket",
+			haEntityDomains: ["light", "switch"],
+		});
+
+		vi.spyOn(haConfigUtil, "readHAConfig").mockResolvedValue("");
+		vi.spyOn(haConfigUtil, "parseYAML").mockReturnValue({});
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	it("should return 405 for non-GET requests", async () => {
+		const handler = (await import("./entities")).default;
+		req = { method: "POST" };
+
+		await handler(req as NextApiRequest, res as NextApiResponse);
+
+		expect(statusMock).toHaveBeenCalledWith(405);
+		expect(jsonMock).toHaveBeenCalledWith({
+			success: false,
+			error: "Method not allowed. Use GET.",
+		});
+	});
+
+	it("should return 405 for PUT request", async () => {
+		const handler = (await import("./entities")).default;
+		req = { method: "PUT" };
+
+		await handler(req as NextApiRequest, res as NextApiResponse);
+
+		expect(statusMock).toHaveBeenCalledWith(405);
+		expect(jsonMock).toHaveBeenCalledWith({
+			success: false,
+			error: "Method not allowed. Use GET.",
+		});
+	});
+
+	it("should return 405 for DELETE request", async () => {
+		const handler = (await import("./entities")).default;
+		req = { method: "DELETE" };
+
+		await handler(req as NextApiRequest, res as NextApiResponse);
+
+		expect(statusMock).toHaveBeenCalledWith(405);
+		expect(jsonMock).toHaveBeenCalledWith({
+			success: false,
+			error: "Method not allowed. Use GET.",
+		});
+	});
+
+	it("should successfully return compiled entities", async () => {
+		const handler = (await import("./entities")).default;
+		req = { method: "GET" };
+
+		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+
+		await vi.waitFor(() => {
+			expect(mockWsHandlers.open).toBeDefined();
+		});
+
+		simulateWebSocketFlow();
+
+		await handlerPromise;
+
+		expect(statusMock).toHaveBeenCalledWith(200);
+		expect(jsonMock).toHaveBeenCalledWith({
+			success: true,
+			data: [
+				{
+					id: "entity-1",
+					entity_id: "light.living_room",
+					name: "Living Room Light",
+					entity_category: null,
+					shared: false,
+					device: {
+						id: "device-1",
+						name: "Test Device",
+						manufacturer: "Manufacturer Y",
+						model: "Model X",
+					},
+					area: {
+						area_id: "area-1",
+						name: "Living Room",
+					},
+				},
+			],
+		});
+	});
+
+	it("should mark entity as shared when in config", async () => {
+		const handler = (await import("./entities")).default;
+		req = { method: "GET" };
+
+		vi.spyOn(haConfigUtil, "parseYAML").mockReturnValue({
+			alexa: {
+				smart_home: {
+					filter: {
+						include_entities: ["light.living_room"],
+					},
+				},
+			},
+		});
+
+		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+
+		await vi.waitFor(() => {
+			expect(mockWsHandlers.open).toBeDefined();
+		});
+
+		simulateWebSocketFlow();
+
+		await handlerPromise;
+
+		expect(statusMock).toHaveBeenCalledWith(200);
+		expect(jsonMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				success: true,
+				data: expect.arrayContaining([
+					expect.objectContaining({
+						entity_id: "light.living_room",
+						shared: true,
+					}),
+				]),
+			}),
+		);
+	});
+
+	it("should handle WebSocket errors", async () => {
+		const handler = (await import("./entities")).default;
+		req = { method: "GET" };
+
+		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+
+		await vi.waitFor(() => {
+			expect(mockWsHandlers.error).toBeDefined();
+		});
+
+		emitWsEvent("error", new Error("WebSocket connection failed"));
+
+		await handlerPromise;
+
+		expect(statusMock).toHaveBeenCalledWith(500);
+		expect(jsonMock).toHaveBeenCalledWith({
+			success: false,
+			message: "WebSocket connection failed",
+		});
+	});
+
+	it("should handle entity without device", async () => {
+		const handler = (await import("./entities")).default;
+		req = { method: "GET" };
+
+		const entityWithoutDevice = {
+			...mockEntity,
+			device_id: "non-existent-device",
+		};
+
+		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+
+		await vi.waitFor(() => {
+			expect(mockWsHandlers.open).toBeDefined();
+		});
+
+		simulateWebSocketFlow({ entities: [entityWithoutDevice] });
+
+		await handlerPromise;
+
+		expect(statusMock).toHaveBeenCalledWith(200);
+		expect(jsonMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				success: true,
+				data: expect.arrayContaining([
+					expect.objectContaining({
+						device: {
+							id: "",
+							name: "",
+							manufacturer: "",
+							model: "",
+						},
+					}),
+				]),
+			}),
+		);
+	});
+
+	it("should handle entity without area", async () => {
+		const handler = (await import("./entities")).default;
+		req = { method: "GET" };
+
+		const entityWithoutArea = {
+			...mockEntity,
+			area_id: null,
+		};
+
+		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+
+		await vi.waitFor(() => {
+			expect(mockWsHandlers.open).toBeDefined();
+		});
+
+		simulateWebSocketFlow({ entities: [entityWithoutArea] });
+
+		await handlerPromise;
+
+		expect(statusMock).toHaveBeenCalledWith(200);
+		expect(jsonMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				success: true,
+				data: expect.arrayContaining([
+					expect.objectContaining({
+						area: {
+							area_id: "",
+							name: "",
+						},
+					}),
+				]),
+			}),
+		);
+	});
+
+	it("should use environment variables when available", async () => {
+		const handler = (await import("./entities")).default;
+		const originalEnv = process.env;
+		process.env = {
+			...originalEnv,
+			SUPERVISOR_TOKEN: "env-token",
+			HA_WEBSOCKET_URL: "ws://env/websocket",
+		};
+
+		req = { method: "GET" };
+
+		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+
+		await vi.waitFor(() => {
+			expect(mockWsHandlers.open).toBeDefined();
+		});
+
+		simulateWebSocketFlow();
+
+		await handlerPromise;
+
+		expect(statusMock).toHaveBeenCalledWith(200);
+
+		process.env = originalEnv;
+	});
+
+	it("should filter entities by configured domains", async () => {
+		const handler = (await import("./entities")).default;
+		req = { method: "GET" };
+
+		const switchEntity = {
+			id: "entity-2",
+			entity_id: "switch.bedroom",
+			entity_category: null,
+			name: "Bedroom Switch",
+			area_id: "area-1",
+			device_id: "device-1",
+		};
+
+		const sensorEntity = {
+			id: "entity-3",
+			entity_id: "sensor.temperature",
+			entity_category: null,
+			name: "Temperature Sensor",
+			area_id: "area-1",
+			device_id: "device-1",
+		};
+
+		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+
+		await vi.waitFor(() => {
+			expect(mockWsHandlers.open).toBeDefined();
+		});
+
+		simulateWebSocketFlow({ entities: [mockEntity, switchEntity, sensorEntity] });
+
+		await handlerPromise;
+
+		expect(statusMock).toHaveBeenCalledWith(200);
+		const responseData = jsonMock.mock.calls[0][0];
+		expect(responseData.data).toHaveLength(2);
+		expect(responseData.data.map((e: { entity_id: string }) => e.entity_id)).toEqual([
+			"light.living_room",
+			"switch.bedroom",
+		]);
+	});
+
+	it("should handle getAddonOptions errors", async () => {
+		const handler = (await import("./entities")).default;
+		req = { method: "GET" };
+
+		vi.spyOn(addonOptionsUtil, "getAddonOptions").mockRejectedValue(
+			new Error("Failed to read addon options"),
+		);
+
+		await handler(req as NextApiRequest, res as NextApiResponse);
+
+		expect(statusMock).toHaveBeenCalledWith(500);
+		expect(jsonMock).toHaveBeenCalledWith({
+			success: false,
+			message: "Failed to read addon options",
+		});
+	});
+
+	it("should handle readHAConfig errors", async () => {
+		const handler = (await import("./entities")).default;
+		req = { method: "GET" };
+
+		vi.spyOn(haConfigUtil, "readHAConfig").mockRejectedValue(
+			new Error("Failed to read HA config"),
+		);
+
+		await handler(req as NextApiRequest, res as NextApiResponse);
+
+		expect(statusMock).toHaveBeenCalledWith(500);
+		expect(jsonMock).toHaveBeenCalledWith({
+			success: false,
+			message: "Failed to read HA config",
+		});
+	});
+
+	it("should send auth message on WebSocket open", async () => {
+		const handler = (await import("./entities")).default;
+		req = { method: "GET" };
+
+		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+
+		await vi.waitFor(() => {
+			expect(mockWsHandlers.open).toBeDefined();
+		});
+
+		emitWsEvent("open");
+
+		expect(mockWsSend).toHaveBeenCalledWith(
+			JSON.stringify({ type: "auth", access_token: "test-token" }),
+		);
+
+		emitWsEvent("error", new Error("Test timeout"));
+
+		await handlerPromise;
+	});
+
+	it("should send registry requests after auth_ok", async () => {
+		const handler = (await import("./entities")).default;
+		req = { method: "GET" };
+
+		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+
+		await vi.waitFor(() => {
+			expect(mockWsHandlers.open).toBeDefined();
+		});
+
+		emitWsEvent("open");
+		emitWsEvent("message", Buffer.from(JSON.stringify({ type: MessageType.AUTH_OK })));
+
+		expect(mockWsSend).toHaveBeenCalledWith(
+			JSON.stringify({
+				type: MessageType.GET_DEVICES,
+				id: RequestTypeId.GET_DEVICES,
+			}),
+		);
+		expect(mockWsSend).toHaveBeenCalledWith(
+			JSON.stringify({
+				type: MessageType.GET_ENTITIES,
+				id: RequestTypeId.GET_ENTITIES,
+			}),
+		);
+		expect(mockWsSend).toHaveBeenCalledWith(
+			JSON.stringify({
+				type: MessageType.GET_AREAS,
+				id: RequestTypeId.GET_AREAS,
+			}),
+		);
+
+		emitWsEvent("error", new Error("Test complete"));
+
+		await handlerPromise;
+	});
+
+	it("should close WebSocket after receiving all data", async () => {
+		const handler = (await import("./entities")).default;
+		req = { method: "GET" };
+
+		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+
+		await vi.waitFor(() => {
+			expect(mockWsHandlers.open).toBeDefined();
+		});
+
+		simulateWebSocketFlow();
+
+		await handlerPromise;
+
+		expect(mockWsClose).toHaveBeenCalled();
+	});
+
+	it("should handle ArrayBuffer message data", async () => {
+		const handler = (await import("./entities")).default;
+		req = { method: "GET" };
+
+		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+
+		await vi.waitFor(() => {
+			expect(mockWsHandlers.open).toBeDefined();
+		});
+
+		const encoder = new TextEncoder();
+
+		emitWsEvent("open");
+		emitWsEvent("message", encoder.encode(JSON.stringify({ type: MessageType.AUTH_OK })));
+		emitWsEvent(
+			"message",
+			encoder.encode(
+				JSON.stringify({
+					type: MessageType.RESULT,
+					id: RequestTypeId.GET_DEVICES,
+					result: [mockDevice],
+				}),
+			),
+		);
+		emitWsEvent(
+			"message",
+			encoder.encode(
+				JSON.stringify({
+					type: MessageType.RESULT,
+					id: RequestTypeId.GET_ENTITIES,
+					result: [mockEntity],
+				}),
+			),
+		);
+		emitWsEvent(
+			"message",
+			encoder.encode(
+				JSON.stringify({
+					type: MessageType.RESULT,
+					id: RequestTypeId.GET_AREAS,
+					result: [mockArea],
+				}),
+			),
+		);
+
+		await handlerPromise;
+
+		expect(statusMock).toHaveBeenCalledWith(200);
+	});
+
+	it("should handle array of Buffer message data", async () => {
+		const handler = (await import("./entities")).default;
+		req = { method: "GET" };
+
+		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+
+		await vi.waitFor(() => {
+			expect(mockWsHandlers.open).toBeDefined();
+		});
+
+		emitWsEvent("open");
+		emitWsEvent("message", [Buffer.from(JSON.stringify({ type: MessageType.AUTH_OK }))]);
+		emitWsEvent("message", [
+			Buffer.from(
+				JSON.stringify({
+					type: MessageType.RESULT,
+					id: RequestTypeId.GET_DEVICES,
+					result: [mockDevice],
+				}),
+			),
+		]);
+		emitWsEvent("message", [
+			Buffer.from(
+				JSON.stringify({
+					type: MessageType.RESULT,
+					id: RequestTypeId.GET_ENTITIES,
+					result: [mockEntity],
+				}),
+			),
+		]);
+		emitWsEvent("message", [
+			Buffer.from(
+				JSON.stringify({
+					type: MessageType.RESULT,
+					id: RequestTypeId.GET_AREAS,
+					result: [mockArea],
+				}),
+			),
+		]);
+
+		await handlerPromise;
+
+		expect(statusMock).toHaveBeenCalledWith(200);
+	});
+
+	it("should use default domains when haEntityDomains not configured", async () => {
+		const handler = (await import("./entities")).default;
+		req = { method: "GET" };
+
+		vi.spyOn(addonOptionsUtil, "getAddonOptions").mockResolvedValue({
+			haAccessToken: "test-token",
+			haWebsocketUrl: "ws://test/websocket",
+		});
+
+		const automationEntity = {
+			id: "entity-auto",
+			entity_id: "automation.morning_routine",
+			entity_category: null,
+			name: "Morning Routine",
+			area_id: "area-1",
+			device_id: "device-1",
+		};
+
+		const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
+
+		await vi.waitFor(() => {
+			expect(mockWsHandlers.open).toBeDefined();
+		});
+
+		simulateWebSocketFlow({ entities: [mockEntity, automationEntity] });
+
+		await handlerPromise;
+
+		expect(statusMock).toHaveBeenCalledWith(200);
+		const responseData = jsonMock.mock.calls[0][0];
+		expect(responseData.data).toHaveLength(2);
+		expect(responseData.data.map((e: { entity_id: string }) => e.entity_id)).toContain(
+			"automation.morning_routine",
+		);
+	});
+
+	it("should not log console.error output", () => {
+		expect(consoleErrorSpy).toBeDefined();
+	});
+});

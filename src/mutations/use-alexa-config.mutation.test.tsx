@@ -4,76 +4,10 @@ import axios from "axios";
 import nock from "nock";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { useAlexaConfig, usePublishAlexaConfig } from "./use-alexa-config.hook";
+import { usePublishAlexaConfig } from "./use-alexa-config.mutation";
 
 // Configure axios defaults for testing
 axios.defaults.baseURL = "http://localhost:3000";
-
-describe("useAlexaConfig", () => {
-	let queryClient: QueryClient;
-
-	beforeEach(() => {
-		queryClient = new QueryClient({
-			defaultOptions: {
-				queries: { retry: false },
-				mutations: { retry: false },
-			},
-		});
-		nock.cleanAll();
-		// Disable nock's network connections
-		nock.disableNetConnect();
-	});
-
-	afterEach(() => {
-		nock.cleanAll();
-		nock.enableNetConnect();
-	});
-
-	const wrapper = ({ children }: { children: ReactNode }) => (
-		<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-	);
-
-	it("should fetch alexa config successfully", async () => {
-		const mockData = {
-			success: true,
-			entityIds: ["light.living_room", "switch.bedroom"],
-		};
-
-		nock("http://localhost:3000")
-			.get("/api/get-alexa-config")
-			.reply(200, mockData);
-
-		const { result } = renderHook(() => useAlexaConfig(), { wrapper });
-
-		await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-		expect(result.current.data).toEqual(mockData.entityIds);
-	});
-
-	it("should handle fetch error", async () => {
-		nock("http://localhost:3000")
-			.get("/api/get-alexa-config")
-			.reply(200, { success: false });
-
-		const { result } = renderHook(() => useAlexaConfig(), { wrapper });
-
-		await waitFor(() => expect(result.current.isError).toBe(true));
-
-		expect(result.current.error).toBeTruthy();
-	});
-
-	it("should handle network error", async () => {
-		nock("http://localhost:3000")
-			.get("/api/get-alexa-config")
-			.replyWithError("Network error");
-
-		const { result } = renderHook(() => useAlexaConfig(), { wrapper });
-
-		await waitFor(() => expect(result.current.isError).toBe(true));
-
-		expect(result.current.error).toBeTruthy();
-	});
-});
 
 describe("usePublishAlexaConfig", () => {
 	let queryClient: QueryClient;

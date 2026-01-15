@@ -8,6 +8,7 @@ vi.mock("node:fs/promises", () => ({
 	},
 }));
 
+import { DOMAINS } from "@/guards/home-assistant-type.guard";
 import {
 	clearOptionsCache,
 	DEFAULT_OPTIONS,
@@ -30,6 +31,7 @@ describe("addon-options.util", () => {
 			const mockOptions = {
 				haWebsocketUrl: "http://custom.local:8123",
 				haAccessToken: "secret-token",
+				haEntityDomains: DOMAINS,
 			};
 			mockReadFile.mockResolvedValue(JSON.stringify(mockOptions));
 
@@ -91,10 +93,12 @@ describe("addon-options.util", () => {
 			const mockOptions1 = {
 				haWebsocketUrl: "http://first.local:8123",
 				haAccessToken: "first-token",
+				haEntityDomains: DOMAINS,
 			};
 			const mockOptions2 = {
 				haWebsocketUrl: "http://second.local:8123",
 				haAccessToken: "second-token",
+				haEntityDomains: DOMAINS,
 			};
 			mockReadFile
 				.mockResolvedValueOnce(JSON.stringify(mockOptions1))

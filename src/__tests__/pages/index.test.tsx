@@ -1,677 +1,585 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import toast from "react-hot-toast";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import * as useAlexaConfigModule from "@/hooks/use-alexa-config.hook";
-import type { HydratedEntity } from "@/hooks/use-synced-entities.hook";
-import * as useSyncedEntitiesModule from "@/hooks/use-synced-entities.hook";
+import userEvent from "@testing-library/user-event";
+import type React from "react";
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import type { CompiledEntity } from "@/types/items.types";
+
+const mockToastSuccess = vi.fn();
+const mockToastError = vi.fn();
+
+vi.mock("react-hot-toast", () => ({
+	default: {
+		success: (msg: string, opts?: unknown) => mockToastSuccess(msg, opts),
+		error: (msg: string, opts?: unknown) => mockToastError(msg, opts),
+	},
+}));
+
+const mockMutate = vi.fn();
+const mockRefetch = vi.fn();
+const mockSetSyncStatus = vi.fn();
+const mockGetSyncedEntityIds = vi.fn(() => ["light.living_room"]);
+const mockGetSyncedCount = vi.fn(() => 1);
+
+type MockUseGetEntitiesReturn = {
+	data: CompiledEntity[] | undefined;
+	isLoading: boolean;
+	isSuccess: boolean;
+	isError: boolean;
+	error: Error | null;
+	refetch: Mock;
+	setSyncStatus: Mock;
+	getSyncedEntityIds: Mock<() => string[]>;
+	getSyncedCount: Mock<() => number>;
+};
+
+const createMockUseGetEntities = (
+	overrides: Partial<MockUseGetEntitiesReturn> = {},
+) =>
+	({
+		data: [] as CompiledEntity[],
+		isLoading: false,
+		isSuccess: true,
+		isError: false,
+		error: null,
+		refetch: mockRefetch,
+		setSyncStatus: mockSetSyncStatus,
+		getSyncedEntityIds: mockGetSyncedEntityIds,
+		getSyncedCount: mockGetSyncedCount,
+		...overrides,
+	});
+
+vi.mock("@/queries/use-get-entities.query", () => ({
+	useGetEntities: vi.fn(() => createMockUseGetEntities()),
+}));
+
+vi.mock("@/mutations/use-alexa-config.mutation", () => ({
+	usePublishAlexaConfig: vi.fn(() => ({
+		mutate: mockMutate,
+		isPending: false,
+	})),
+}));
+
+import { useGetEntities } from "@/queries/use-get-entities.query";
+import { usePublishAlexaConfig } from "@/mutations/use-alexa-config.mutation";
 import Home from "../../pages/index";
 
-// Mock dependencies
-vi.mock("@/hooks/use-synced-entities.hook");
-vi.mock("@/hooks/use-alexa-config.hook");
-vi.mock("react-hot-toast");
-
-// Mock Material Tailwind components
-vi.mock("@material-tailwind/react", () => ({
-	Button: ({
-		children,
-		onClick,
-		disabled,
-		...props
-	}: {
-		children: React.ReactNode;
-		onClick?: () => void;
-		disabled?: boolean;
-		[key: string]: unknown;
-	}) => (
-		<button onClick={onClick} disabled={disabled} {...props}>
-			{children}
-		</button>
-	),
-	Card: ({
-		children,
-		...props
-	}: {
-		children: React.ReactNode;
-		[key: string]: unknown;
-	}) => <div {...props}>{children}</div>,
-	CardBody: ({
-		children,
-		...props
-	}: {
-		children: React.ReactNode;
-		[key: string]: unknown;
-	}) => <div {...props}>{children}</div>,
-	CardFooter: ({
-		children,
-		...props
-	}: {
-		children: React.ReactNode;
-		[key: string]: unknown;
-	}) => <div {...props}>{children}</div>,
-	CardHeader: ({
-		children,
-		...props
-	}: {
-		children: React.ReactNode;
-		[key: string]: unknown;
-	}) => <div {...props}>{children}</div>,
-	Input: ({
-		onChange,
-		label,
-		...props
-	}: {
-		onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-		label?: string;
-		[key: string]: unknown;
-	}) => <input onChange={onChange} placeholder={label} {...props} />,
-	Tab: ({
-		children,
-		onClick,
-		...props
-	}: {
-		children: React.ReactNode;
-		onClick?: () => void;
-		[key: string]: unknown;
-	}) => (
-		<button type="button" onClick={onClick} {...props}>
-			{children}
-		</button>
-	),
-	Tabs: ({
-		children,
-		...props
-	}: {
-		children: React.ReactNode;
-		[key: string]: unknown;
-	}) => <div {...props}>{children}</div>,
-	TabsHeader: ({
-		children,
-		...props
-	}: {
-		children: React.ReactNode;
-		[key: string]: unknown;
-	}) => <div {...props}>{children}</div>,
-	Typography: ({
-		children,
-		...props
-	}: {
-		children: React.ReactNode;
-		[key: string]: unknown;
-	}) => <span {...props}>{children}</span>,
-}));
-
-// Mock icons
-vi.mock("@heroicons/react/24/outline", () => ({
-	MagnifyingGlassIcon: () => <svg data-testid="search-icon" />,
-}));
-
-vi.mock("@heroicons/react/24/solid", () => ({
-	ArrowPathIcon: () => <svg data-testid="reload-icon" />,
-	ArrowUpCircleIcon: () => <svg data-testid="publish-icon" />,
-}));
-
-// Mock components
-vi.mock("@/components/confirm-dialog", () => ({
-	ConfirmDialog: ({
-		open,
-		onConfirm,
-		onCancel,
-		title,
-		message,
-	}: {
-		open: boolean;
-		onConfirm: () => void;
-		onCancel: () => void;
-		title: string;
-		message: string;
-		variant?: string;
-		confirmText?: string;
-		cancelText?: string;
-		isLoading?: boolean;
-	}) =>
-		open ? (
-			<div data-testid="confirm-dialog">
-				<span>{title}</span>
-				<span>{message}</span>
-				<button type="button" onClick={onConfirm}>
-					Confirm
-				</button>
-				<button type="button" onClick={onCancel}>
-					Cancel
-				</button>
-			</div>
-		) : null,
-}));
-
-vi.mock("@/components/sortable-table", () => ({
-	SortableTable: ({
-		data,
-		onSort,
-	}: {
-		data?: unknown[];
-		onSort: (key: string) => void;
-		columns?: unknown[];
-	}) => (
-		<div data-testid="sortable-table">
-			<button type="button" onClick={() => onSort("device_name")}>
-				Sort by Device
-			</button>
-			{data?.length || 0} items
-		</div>
-	),
-}));
-
-vi.mock("@/configs/entities", () => ({
-	createTableHeaders: vi.fn(() => []),
-	tableQuickFilters: [
-		{ label: "All", value: "all" },
-		{ label: "Synced", value: "synced" },
-		{ label: "Unsynced", value: "unsynced" },
-	],
-}));
-
-describe("Home (index page)", () => {
-	let queryClient: QueryClient;
-	const mockReload = vi.fn();
-	const mockSetSyncStatus = vi.fn();
-	const mockGetSyncedEntityIds = vi.fn();
-	const mockGetSyncedCount = vi.fn();
-	const mockMutate = vi.fn();
-
-	const mockEntities: HydratedEntity[] = [
-		{
-			id: "1",
-			entity_id: "light.living_room",
-			name: "Living Room Light",
-			entity_category: null,
-			device: {
-				id: "device1",
-				name: "Smart Light",
-				manufacturer: "Philips",
-				model: "Hue",
-			},
-			area: {
-				area_id: "living_room",
-				name: "Living Room",
-			},
-			isSynced: true,
+const mockEntities: CompiledEntity[] = [
+	{
+		id: "entity-1",
+		entity_id: "light.living_room",
+		name: "Living Room Light",
+		entity_category: null,
+		shared: true,
+		device: {
+			id: "device-1",
+			name: "Philips Hue",
+			manufacturer: "Philips",
+			model: "Hue Bulb",
 		},
-		{
-			id: "2",
-			entity_id: "switch.bedroom",
-			name: "Bedroom Switch",
-			entity_category: null,
-			device: {
-				id: "device2",
-				name: "Smart Switch",
-				manufacturer: "Sonoff",
-				model: "Basic",
-			},
-			area: {
-				area_id: "bedroom",
-				name: "Bedroom",
-			},
-			isSynced: false,
+		area: {
+			area_id: "area-1",
+			name: "Living Room",
 		},
-	];
+	},
+	{
+		id: "entity-2",
+		entity_id: "switch.bedroom",
+		name: "Bedroom Switch",
+		entity_category: null,
+		shared: false,
+		device: {
+			id: "device-2",
+			name: "Smart Switch",
+			manufacturer: "TP-Link",
+			model: "Kasa",
+		},
+		area: {
+			area_id: "area-2",
+			name: "Bedroom",
+		},
+	},
+];
 
+const createQueryClient = () =>
+	new QueryClient({
+		defaultOptions: {
+			queries: { retry: false },
+			mutations: { retry: false },
+		},
+	});
+
+const renderWithProviders = (ui: React.ReactElement) => {
+	const queryClient = createQueryClient();
+	return render(
+		<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+	);
+};
+
+const mockUseGetEntities = (overrides: Partial<MockUseGetEntitiesReturn> = {}) => {
+	vi.mocked(useGetEntities).mockReturnValue(
+		createMockUseGetEntities(overrides) as unknown as ReturnType<typeof useGetEntities>,
+	);
+};
+
+describe("Home Page", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		queryClient = new QueryClient({
-			defaultOptions: {
-				queries: { retry: false },
-			},
-		});
+		vi.spyOn(console, "error").mockImplementation(() => {});
 
-		mockGetSyncedCount.mockReturnValue(1);
-		mockGetSyncedEntityIds.mockReturnValue(["light.living_room"]);
+		mockUseGetEntities({ data: mockEntities });
 
-		vi.mocked(useSyncedEntitiesModule.useSyncedEntities).mockReturnValue({
-			entities: mockEntities,
-			setSyncStatus: mockSetSyncStatus,
-			getSyncedEntityIds: mockGetSyncedEntityIds,
-			getSyncedCount: mockGetSyncedCount,
-			isLoadingConfig: false,
-			reload: mockReload,
-		});
-
-		vi.mocked(useAlexaConfigModule.usePublishAlexaConfig).mockReturnValue({
+		vi.mocked(usePublishAlexaConfig).mockReturnValue({
 			mutate: mockMutate,
 			isPending: false,
-			isSuccess: false,
-			isError: false,
-			data: undefined,
-			error: null,
-			isIdle: true,
-			status: "idle",
-			reset: vi.fn(),
-			mutateAsync: vi.fn(),
-			failureCount: 0,
-			failureReason: null,
-			isPaused: false,
-			variables: undefined,
-			submittedAt: 0,
-			context: undefined,
+		} as unknown as ReturnType<typeof usePublishAlexaConfig>);
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	describe("Rendering", () => {
+		it("should render the page title", () => {
+			renderWithProviders(<Home />);
+			expect(screen.getByText("Devices")).toBeInTheDocument();
 		});
 
-		vi.mocked(toast.success).mockImplementation(() => "");
-		vi.mocked(toast.error).mockImplementation(() => "");
-	});
-
-	const renderHome = () => {
-		return render(
-			<QueryClientProvider client={queryClient}>
-				<Home />
-			</QueryClientProvider>,
-		);
-	};
-
-	it("should render the page title", () => {
-		renderHome();
-		expect(screen.getByText("Devices")).toBeInTheDocument();
-	});
-
-	it("should render device description", () => {
-		renderHome();
-		expect(
-			screen.getByText("Select devices to share with Alexa Home"),
-		).toBeInTheDocument();
-	});
-
-	it("should render reload devices button", () => {
-		renderHome();
-		expect(screen.getByText("Reload Devices")).toBeInTheDocument();
-	});
-
-	it("should render publish changes button", () => {
-		renderHome();
-		expect(screen.getByText("Publish Changes")).toBeInTheDocument();
-	});
-
-	it("should call reload when reload button is clicked", () => {
-		renderHome();
-
-		const reloadButton = screen.getByText("Reload Devices");
-		fireEvent.click(reloadButton);
-
-		expect(mockReload).toHaveBeenCalledTimes(1);
-		expect(toast.success).toHaveBeenCalledWith(
-			"Reloading devices from Home Assistant...",
-			{ duration: 2000 },
-		);
-	});
-
-	it("should open confirm dialog when publish button is clicked", () => {
-		renderHome();
-
-		const publishButton = screen.getByText("Publish Changes");
-		fireEvent.click(publishButton);
-
-		expect(screen.getByTestId("confirm-dialog")).toBeInTheDocument();
-		expect(screen.getByText("Publish Changes to Alexa?")).toBeInTheDocument();
-	});
-
-	it("should disable publish button when no entities are synced", () => {
-		mockGetSyncedCount.mockReturnValue(0);
-
-		renderHome();
-
-		const publishButton = screen.getByText("Publish Changes");
-		expect(publishButton).toBeDisabled();
-	});
-
-	it("should disable publish button when mutation is pending", () => {
-		vi.mocked(useAlexaConfigModule.usePublishAlexaConfig).mockReturnValue({
-			mutate: mockMutate,
-			isPending: true,
-			isSuccess: false,
-			isError: false,
-			data: undefined,
-			error: null,
-			isIdle: false,
-			status: "pending",
-			reset: vi.fn(),
-			mutateAsync: vi.fn(),
-			failureCount: 0,
-			failureReason: null,
-			isPaused: false,
-			variables: [],
-			submittedAt: 0,
-			context: undefined,
+		it("should render the page description", () => {
+			renderWithProviders(<Home />);
+			expect(
+				screen.getByText("Select devices to share with Alexa Home"),
+			).toBeInTheDocument();
 		});
 
-		renderHome();
-
-		const publishButton = screen.getByText("Publishing...");
-		expect(publishButton).toBeDisabled();
-	});
-
-	it("should show Publishing... text when mutation is pending", () => {
-		vi.mocked(useAlexaConfigModule.usePublishAlexaConfig).mockReturnValue({
-			mutate: mockMutate,
-			isPending: true,
-			isSuccess: false,
-			isError: false,
-			data: undefined,
-			error: null,
-			isIdle: false,
-			status: "pending",
-			reset: vi.fn(),
-			mutateAsync: vi.fn(),
-			failureCount: 0,
-			failureReason: null,
-			isPaused: false,
-			variables: [],
-			submittedAt: 0,
-			context: undefined,
+		it("should render the Reload Devices button", () => {
+			renderWithProviders(<Home />);
+			expect(screen.getByText("Reload Devices")).toBeInTheDocument();
 		});
 
-		renderHome();
+		it("should render the Publish Changes button", () => {
+			renderWithProviders(<Home />);
+			expect(screen.getByText("Publish Changes")).toBeInTheDocument();
+		});
 
-		expect(screen.getByText("Publishing...")).toBeInTheDocument();
+		it("should render search input", () => {
+			renderWithProviders(<Home />);
+			expect(screen.getByRole("textbox")).toBeInTheDocument();
+		});
+
+		it("should render filter tabs", () => {
+			renderWithProviders(<Home />);
+			const tabList = screen.getByRole("tablist");
+			expect(tabList).toBeInTheDocument();
+			expect(screen.getAllByRole("tab")).toHaveLength(3);
+		});
+
+		it("should render pagination controls", () => {
+			renderWithProviders(<Home />);
+			expect(screen.getByText("Previous")).toBeInTheDocument();
+			expect(screen.getByText("Next")).toBeInTheDocument();
+		});
 	});
 
-	it("should publish changes when confirm button is clicked", async () => {
-		renderHome();
+	describe("Loading State", () => {
+		it("should not show table when loading", () => {
+			mockUseGetEntities({
+				data: undefined,
+				isLoading: true,
+				isSuccess: false,
+			});
 
-		// Open dialog
-		const publishButton = screen.getByText("Publish Changes");
-		fireEvent.click(publishButton);
+			renderWithProviders(<Home />);
 
-		// Confirm
-		const confirmButton = screen.getByText("Confirm");
-		fireEvent.click(confirmButton);
-
-		expect(mockMutate).toHaveBeenCalledWith(
-			["light.living_room"],
-			expect.objectContaining({
-				onSuccess: expect.any(Function),
-				onError: expect.any(Function),
-			}),
-		);
+			expect(screen.queryByRole("table")).not.toBeInTheDocument();
+		});
 	});
 
-	it("should close dialog and show success toast on successful publish", async () => {
-		renderHome();
+	describe("Success State", () => {
+		it("should show toast on successful load", async () => {
+			mockToastSuccess.mockClear();
 
-		// Open dialog
-		const publishButton = screen.getByText("Publish Changes");
-		fireEvent.click(publishButton);
+			renderWithProviders(<Home />);
 
-		// Get the mutation call
-		const confirmButton = screen.getByText("Confirm");
-		fireEvent.click(confirmButton);
+			await waitFor(() => {
+				expect(mockToastSuccess).toHaveBeenCalledWith(
+					"Successfully loaded entities!",
+					undefined,
+				);
+			});
+		});
 
-		const mutateCall = mockMutate.mock.calls[0];
-		const { onSuccess } = mutateCall[1];
+		it("should render table with entities", () => {
+			renderWithProviders(<Home />);
 
-		// Simulate success
-		onSuccess({ entitiesCount: 1, success: true, message: "Success" });
+			expect(screen.getByText("Philips Hue")).toBeInTheDocument();
+			expect(screen.getByText("Smart Switch")).toBeInTheDocument();
+		});
 
-		await waitFor(() => {
-			expect(toast.success).toHaveBeenCalledWith(
+		it("should display entity names", () => {
+			renderWithProviders(<Home />);
+
+			expect(screen.getByText("Living Room Light")).toBeInTheDocument();
+			expect(screen.getByText("Bedroom Switch")).toBeInTheDocument();
+		});
+
+		it("should display entity IDs", () => {
+			renderWithProviders(<Home />);
+
+			expect(screen.getByText("light.living_room")).toBeInTheDocument();
+			expect(screen.getByText("switch.bedroom")).toBeInTheDocument();
+		});
+	});
+
+	describe("Error State", () => {
+		it("should show error toast on failure", async () => {
+			mockToastSuccess.mockClear();
+			mockToastError.mockClear();
+
+			mockUseGetEntities({
+				data: undefined,
+				isLoading: false,
+				isSuccess: false,
+				isError: true,
+				error: new Error("Failed to load entities"),
+			});
+
+			renderWithProviders(<Home />);
+
+			await waitFor(() => {
+				expect(mockToastError).toHaveBeenCalledWith(
+					"Failed to load entities",
+					undefined,
+				);
+			});
+		});
+
+		it("should show generic error when no message", async () => {
+			mockToastSuccess.mockClear();
+			mockToastError.mockClear();
+
+			mockUseGetEntities({
+				data: undefined,
+				isLoading: false,
+				isSuccess: false,
+				isError: true,
+				error: null,
+			});
+
+			renderWithProviders(<Home />);
+
+			await waitFor(() => {
+				expect(mockToastError).toHaveBeenCalledWith("Error", undefined);
+			});
+		});
+	});
+
+	describe("Search Functionality", () => {
+		it("should filter entities by search term", async () => {
+			const user = userEvent.setup();
+			renderWithProviders(<Home />);
+
+			const searchInput = screen.getByRole("textbox");
+			await user.type(searchInput, "Philips");
+
+			expect(screen.getByText("Philips Hue")).toBeInTheDocument();
+			expect(screen.queryByText("Smart Switch")).not.toBeInTheDocument();
+		});
+
+		it("should filter by entity ID", async () => {
+			const user = userEvent.setup();
+			renderWithProviders(<Home />);
+
+			const searchInput = screen.getByRole("textbox");
+			await user.type(searchInput, "light.living");
+
+			expect(screen.getByText("Living Room Light")).toBeInTheDocument();
+			expect(screen.queryByText("Bedroom Switch")).not.toBeInTheDocument();
+		});
+
+		it("should filter by manufacturer", async () => {
+			const user = userEvent.setup();
+			renderWithProviders(<Home />);
+
+			const searchInput = screen.getByRole("textbox");
+			await user.type(searchInput, "TP-Link");
+
+			expect(screen.queryByText("Philips Hue")).not.toBeInTheDocument();
+			expect(screen.getByText("Smart Switch")).toBeInTheDocument();
+		});
+
+		it("should reset to page 0 when searching", async () => {
+			const user = userEvent.setup();
+			renderWithProviders(<Home />);
+
+			const searchInput = screen.getByRole("textbox");
+			await user.type(searchInput, "test");
+
+			expect(screen.getByText(/Page 1 of/)).toBeInTheDocument();
+		});
+	});
+
+	describe("Tab Filtering", () => {
+		it("should show all entities by default", () => {
+			renderWithProviders(<Home />);
+
+			expect(screen.getByText("Philips Hue")).toBeInTheDocument();
+			expect(screen.getByText("Smart Switch")).toBeInTheDocument();
+		});
+
+		it("should filter synced entities when Synced tab clicked", async () => {
+			const user = userEvent.setup();
+			renderWithProviders(<Home />);
+
+			const tabs = screen.getAllByRole("tab");
+			const syncedTab = tabs.find(
+				(tab) =>
+					tab.textContent?.includes("Synced") &&
+					!tab.textContent?.includes("Unsynced"),
+			);
+			if (syncedTab) {
+				await user.click(syncedTab);
+			}
+
+			expect(screen.getByText("Philips Hue")).toBeInTheDocument();
+			expect(screen.queryByText("Smart Switch")).not.toBeInTheDocument();
+		});
+
+		it("should filter unsynced entities when Unsynced tab clicked", async () => {
+			const user = userEvent.setup();
+			renderWithProviders(<Home />);
+
+			const tabs = screen.getAllByRole("tab");
+			const unsyncedTab = tabs.find((tab) =>
+				tab.textContent?.includes("Unsynced"),
+			);
+			if (unsyncedTab) {
+				await user.click(unsyncedTab);
+			}
+
+			expect(screen.queryByText("Philips Hue")).not.toBeInTheDocument();
+			expect(screen.getByText("Smart Switch")).toBeInTheDocument();
+		});
+	});
+
+	describe("Pagination", () => {
+		it("should disable Previous button on first page", () => {
+			renderWithProviders(<Home />);
+
+			const prevButton = screen.getByText("Previous");
+			expect(prevButton).toBeDisabled();
+		});
+
+		it("should show correct page info", () => {
+			renderWithProviders(<Home />);
+
+			expect(screen.getByText(/Page 1 of 1/)).toBeInTheDocument();
+		});
+	});
+
+	describe("Reload Devices", () => {
+		it("should call refetch when Reload Devices clicked", async () => {
+			const user = userEvent.setup();
+			renderWithProviders(<Home />);
+
+			const reloadButton = screen.getByText("Reload Devices");
+			await user.click(reloadButton);
+
+			expect(mockRefetch).toHaveBeenCalled();
+		});
+
+		it("should show toast when reloading", async () => {
+			const user = userEvent.setup();
+			renderWithProviders(<Home />);
+
+			const reloadButton = screen.getByText("Reload Devices");
+			await user.click(reloadButton);
+
+			expect(mockToastSuccess).toHaveBeenCalledWith(
+				"Reloading devices from Home Assistant...",
+				{ duration: 2000 },
+			);
+		});
+	});
+
+	describe("Publish Changes", () => {
+		it("should open confirm dialog when Publish Changes clicked", async () => {
+			const user = userEvent.setup();
+			renderWithProviders(<Home />);
+
+			const publishButton = screen.getByText("Publish Changes");
+			await user.click(publishButton);
+
+			expect(
+				screen.getByText("Publish Changes to Alexa?"),
+			).toBeInTheDocument();
+		});
+
+		it("should show entity count in confirm dialog", async () => {
+			const user = userEvent.setup();
+			mockGetSyncedCount.mockReturnValue(5);
+
+			renderWithProviders(<Home />);
+
+			const publishButton = screen.getByText("Publish Changes");
+			await user.click(publishButton);
+
+			expect(screen.getByText(/5 entities/)).toBeInTheDocument();
+		});
+
+		it("should use singular entity when count is 1", async () => {
+			const user = userEvent.setup();
+			mockGetSyncedCount.mockReturnValue(1);
+
+			renderWithProviders(<Home />);
+
+			const publishButton = screen.getByText("Publish Changes");
+			await user.click(publishButton);
+
+			expect(screen.getByText(/1 entity to your Alexa/)).toBeInTheDocument();
+		});
+
+		it("should call mutate with entity IDs when confirmed", async () => {
+			const user = userEvent.setup();
+			mockGetSyncedEntityIds.mockReturnValue([
+				"light.living_room",
+				"switch.bedroom",
+			]);
+
+			renderWithProviders(<Home />);
+
+			const publishButton = screen.getByText("Publish Changes");
+			await user.click(publishButton);
+
+			const confirmButton = screen.getByText("Publish");
+			await user.click(confirmButton);
+
+			expect(mockMutate).toHaveBeenCalledWith(
+				["light.living_room", "switch.bedroom"],
+				expect.objectContaining({
+					onSuccess: expect.any(Function),
+					onError: expect.any(Function),
+				}),
+			);
+		});
+
+		it("should close dialog when cancelled", async () => {
+			const user = userEvent.setup();
+			renderWithProviders(<Home />);
+
+			const publishButton = screen.getByText("Publish Changes");
+			await user.click(publishButton);
+
+			expect(
+				screen.getByText("Publish Changes to Alexa?"),
+			).toBeInTheDocument();
+
+			const cancelButton = screen.getByText("Cancel");
+			await user.click(cancelButton);
+
+			await waitFor(() => {
+				expect(
+					screen.queryByText("Publish Changes to Alexa?"),
+				).not.toBeInTheDocument();
+			});
+		});
+
+		it("should show Publishing... when pending", () => {
+			vi.mocked(usePublishAlexaConfig).mockReturnValue({
+				mutate: mockMutate,
+				isPending: true,
+			} as unknown as ReturnType<typeof usePublishAlexaConfig>);
+
+			renderWithProviders(<Home />);
+
+			expect(screen.getByText("Publishing...")).toBeInTheDocument();
+		});
+
+		it("should disable button when pending", () => {
+			vi.mocked(usePublishAlexaConfig).mockReturnValue({
+				mutate: mockMutate,
+				isPending: true,
+			} as unknown as ReturnType<typeof usePublishAlexaConfig>);
+
+			renderWithProviders(<Home />);
+
+			const publishButton = screen.getByText("Publishing...");
+			expect(publishButton.closest("button")).toBeDisabled();
+		});
+
+		it("should show success toast on successful publish", async () => {
+			const user = userEvent.setup();
+			mockMutate.mockImplementation(
+				(
+					_entityIds: string[],
+					options: { onSuccess: (data: { entitiesCount: number }) => void },
+				) => {
+					options.onSuccess({ entitiesCount: 3 });
+				},
+			);
+
+			renderWithProviders(<Home />);
+
+			const publishButton = screen.getByText("Publish Changes");
+			await user.click(publishButton);
+
+			const confirmButton = screen.getByText("Publish");
+			await user.click(confirmButton);
+
+			expect(mockToastSuccess).toHaveBeenCalledWith(
 				expect.stringContaining("Configuration updated successfully!"),
-				{ duration: 6000 },
+				expect.objectContaining({ duration: 6000 }),
+			);
+		});
+
+		it("should show error toast on failed publish", async () => {
+			const user = userEvent.setup();
+			mockMutate.mockImplementation(
+				(
+					_entityIds: string[],
+					options: { onError: (error: Error) => void },
+				) => {
+					options.onError(new Error("Network error"));
+				},
+			);
+
+			renderWithProviders(<Home />);
+
+			const publishButton = screen.getByText("Publish Changes");
+			await user.click(publishButton);
+
+			const confirmButton = screen.getByText("Publish");
+			await user.click(confirmButton);
+
+			expect(mockToastError).toHaveBeenCalledWith(
+				expect.stringContaining("Network error"),
+				expect.objectContaining({ duration: 6000 }),
 			);
 		});
 	});
 
-	it("should close dialog and show error toast on failed publish", async () => {
-		renderHome();
+	describe("Sync Toggle", () => {
+		it("should call setSyncStatus when checkbox changed", async () => {
+			renderWithProviders(<Home />);
 
-		// Open dialog
-		const publishButton = screen.getByText("Publish Changes");
-		fireEvent.click(publishButton);
+			const checkboxes = screen.getAllByRole("checkbox");
+			fireEvent.click(checkboxes[0]);
 
-		// Confirm
-		const confirmButton = screen.getByText("Confirm");
-		fireEvent.click(confirmButton);
-
-		const mutateCall = mockMutate.mock.calls[0];
-		const { onError } = mutateCall[1];
-
-		// Simulate error
-		const error = new Error("Publish failed");
-		onError(error);
-
-		await waitFor(() => {
-			expect(toast.error).toHaveBeenCalledWith(
-				"Error: Publish failed. Please check the logs and try again.",
-				{ duration: 6000 },
-			);
+			await waitFor(() => {
+				expect(mockSetSyncStatus).toHaveBeenCalled();
+			});
 		});
 	});
 
-	it("should close dialog when cancel button is clicked", () => {
-		renderHome();
+	describe("Sorting", () => {
+		it("should render sortable table headers", () => {
+			renderWithProviders(<Home />);
 
-		// Open dialog
-		const publishButton = screen.getByText("Publish Changes");
-		fireEvent.click(publishButton);
-
-		expect(screen.getByTestId("confirm-dialog")).toBeInTheDocument();
-
-		// Cancel
-		const cancelButton = screen.getByText("Cancel");
-		fireEvent.click(cancelButton);
-
-		expect(screen.queryByTestId("confirm-dialog")).not.toBeInTheDocument();
-	});
-
-	it("should filter entities by search term", () => {
-		renderHome();
-
-		const searchInput = screen.getByPlaceholderText("Search");
-		fireEvent.change(searchInput, { target: { value: "Living" } });
-
-		// The table should be re-rendered with filtered data
-		expect(screen.getByTestId("sortable-table")).toBeInTheDocument();
-	});
-
-	it("should reset page to 0 when searching", () => {
-		renderHome();
-
-		// Navigate to page 2 first (if possible)
-		const searchInput = screen.getByPlaceholderText("Search");
-
-		// Type search term
-		fireEvent.change(searchInput, { target: { value: "test" } });
-
-		// Page should be reset - component renders without error
-		expect(screen.getByTestId("sortable-table")).toBeInTheDocument();
-	});
-
-	it("should handle sorting", () => {
-		renderHome();
-
-		const sortButton = screen.getByText("Sort by Device");
-		fireEvent.click(sortButton);
-
-		// Component should re-render with sorted data
-		expect(screen.getByTestId("sortable-table")).toBeInTheDocument();
-	});
-
-	it("should reverse sort direction when clicking same column", () => {
-		renderHome();
-
-		const sortButton = screen.getByText("Sort by Device");
-
-		// First click - ascending
-		fireEvent.click(sortButton);
-		expect(screen.getByTestId("sortable-table")).toBeInTheDocument();
-
-		// Second click - descending
-		fireEvent.click(sortButton);
-		expect(screen.getByTestId("sortable-table")).toBeInTheDocument();
-	});
-
-	it("should render quick filter tabs", () => {
-		renderHome();
-
-		expect(screen.getByText(/All/)).toBeInTheDocument();
-		expect(screen.getByText(/Synced/)).toBeInTheDocument();
-		expect(screen.getByText(/Unsynced/)).toBeInTheDocument();
-	});
-
-	it("should filter by synced status", () => {
-		renderHome();
-
-		const syncedTab = screen.getByText(/Synced/);
-		fireEvent.click(syncedTab);
-
-		// Table should be re-rendered with filtered data
-		expect(screen.getByTestId("sortable-table")).toBeInTheDocument();
-	});
-
-	it("should show correct entity count in confirm dialog", () => {
-		mockGetSyncedCount.mockReturnValue(2);
-
-		renderHome();
-
-		const publishButton = screen.getByText("Publish Changes");
-		fireEvent.click(publishButton);
-
-		expect(screen.getByText(/2 entities/)).toBeInTheDocument();
-	});
-
-	it("should show singular entity text when count is 1", () => {
-		mockGetSyncedCount.mockReturnValue(1);
-
-		renderHome();
-
-		const publishButton = screen.getByText("Publish Changes");
-		fireEvent.click(publishButton);
-
-		expect(screen.getByText(/1 entity/)).toBeInTheDocument();
-	});
-
-	it("should paginate entities correctly", () => {
-		// Create more than 10 entities to test pagination
-		const manyEntities: HydratedEntity[] = Array.from(
-			{ length: 25 },
-			(_, i) => ({
-				id: `${i + 1}`,
-				entity_id: `light.${i + 1}`,
-				name: `Light ${i + 1}`,
-				entity_category: null,
-				device: {
-					id: `device${i + 1}`,
-					name: `Device ${i + 1}`,
-					manufacturer: "Test",
-					model: "Model",
-				},
-				area: {
-					area_id: `area${i + 1}`,
-					name: `Area ${i + 1}`,
-				},
-				isSynced: false,
-			}),
-		);
-
-		vi.mocked(useSyncedEntitiesModule.useSyncedEntities).mockReturnValue({
-			entities: manyEntities,
-			setSyncStatus: mockSetSyncStatus,
-			getSyncedEntityIds: mockGetSyncedEntityIds,
-			getSyncedCount: mockGetSyncedCount,
-			isLoadingConfig: false,
-			reload: mockReload,
+			expect(screen.getByText("Device")).toBeInTheDocument();
+			expect(screen.getByText("Name")).toBeInTheDocument();
+			expect(screen.getByText("Entity Id")).toBeInTheDocument();
+			expect(screen.getByText("Manufacturer")).toBeInTheDocument();
+			expect(screen.getByText("Area")).toBeInTheDocument();
 		});
-
-		renderHome();
-
-		// Should show pagination info
-		expect(screen.getByText(/Page 1 of/)).toBeInTheDocument();
-	});
-
-	it("should navigate to next page", () => {
-		const manyEntities: HydratedEntity[] = Array.from(
-			{ length: 25 },
-			(_, i) => ({
-				id: `${i + 1}`,
-				entity_id: `light.${i + 1}`,
-				name: `Light ${i + 1}`,
-				entity_category: null,
-				device: {
-					id: `device${i + 1}`,
-					name: `Device ${i + 1}`,
-					manufacturer: "Test",
-					model: "Model",
-				},
-				area: {
-					area_id: `area${i + 1}`,
-					name: `Area ${i + 1}`,
-				},
-				isSynced: false,
-			}),
-		);
-
-		vi.mocked(useSyncedEntitiesModule.useSyncedEntities).mockReturnValue({
-			entities: manyEntities,
-			setSyncStatus: mockSetSyncStatus,
-			getSyncedEntityIds: mockGetSyncedEntityIds,
-			getSyncedCount: mockGetSyncedCount,
-			isLoadingConfig: false,
-			reload: mockReload,
-		});
-
-		renderHome();
-
-		const nextButton = screen.getByText("Next");
-		fireEvent.click(nextButton);
-
-		expect(screen.getByText(/Page 2 of/)).toBeInTheDocument();
-	});
-
-	it("should navigate to previous page", () => {
-		const manyEntities: HydratedEntity[] = Array.from(
-			{ length: 25 },
-			(_, i) => ({
-				id: `${i + 1}`,
-				entity_id: `light.${i + 1}`,
-				name: `Light ${i + 1}`,
-				entity_category: null,
-				device: {
-					id: `device${i + 1}`,
-					name: `Device ${i + 1}`,
-					manufacturer: "Test",
-					model: "Model",
-				},
-				area: {
-					area_id: `area${i + 1}`,
-					name: `Area ${i + 1}`,
-				},
-				isSynced: false,
-			}),
-		);
-
-		vi.mocked(useSyncedEntitiesModule.useSyncedEntities).mockReturnValue({
-			entities: manyEntities,
-			setSyncStatus: mockSetSyncStatus,
-			getSyncedEntityIds: mockGetSyncedEntityIds,
-			getSyncedCount: mockGetSyncedCount,
-			isLoadingConfig: false,
-			reload: mockReload,
-		});
-
-		renderHome();
-
-		// Go to page 2
-		const nextButton = screen.getByText("Next");
-		fireEvent.click(nextButton);
-
-		// Go back to page 1
-		const prevButton = screen.getByText("Previous");
-		fireEvent.click(prevButton);
-
-		expect(screen.getByText(/Page 1 of/)).toBeInTheDocument();
-	});
-
-	it("should disable previous button on first page", () => {
-		renderHome();
-
-		const prevButton = screen.getByText("Previous");
-		expect(prevButton).toBeDisabled();
 	});
 });

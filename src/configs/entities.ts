@@ -25,7 +25,7 @@ export const createTableHeaders = (
 	{ label: "Area", key: "area", sortable: true },
 	{
 		label: "Synced",
-		key: "synced",
+		key: "shared",
 		sortable: false,
 		inline: true,
 		onchange: onChange,

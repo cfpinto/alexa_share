@@ -1,31 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-
-type AlexaConfigResponse = {
-	success: true;
-	entityIds: string[];
-};
 
 type PublishResponse = {
 	success: true;
 	message: string;
 	entitiesCount: number;
 };
-
-/**
- * Fetches the current Alexa configuration from Home Assistant
- */
-async function fetchAlexaConfig(): Promise<string[]> {
-	const { data } = await axios.get<AlexaConfigResponse>(
-		"/api/get-alexa-config",
-	);
-
-	if (!data.success) {
-		throw new Error("Failed to fetch Alexa configuration");
-	}
-
-	return data.entityIds;
-}
 
 /**
  * Publishes entity IDs to the Alexa configuration
@@ -52,17 +32,6 @@ async function publishAlexaConfig(
 		}
 		throw new Error("Failed to publish configuration");
 	}
-}
-
-/**
- * Hook to fetch the current Alexa configuration
- */
-export function useAlexaConfig() {
-	return useQuery({
-		queryKey: ["alexa-config"],
-		queryFn: fetchAlexaConfig,
-		staleTime: 5 * 60 * 1000, // 5 minutes
-	});
 }
 
 /**
