@@ -7,7 +7,6 @@ image: cfpinto/alexa-share-{arch}
 
 arch:
   - amd64
-  - armv7
   - aarch64
 
 startup: services

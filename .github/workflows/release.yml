@@ -16,13 +16,10 @@ jobs:
       matrix:
         arch:
           - amd64
-          - armv7
           - aarch64
         include:
           - arch: amd64
             platform: linux/amd64
-          - arch: armv7
-            platform: linux/arm/v7
           - arch: aarch64
             platform: linux/arm64
 
@@ -96,7 +93,6 @@ jobs:
             This release includes pre-built Docker images for all supported architectures:
 
             - `${{ env.DOCKERHUB_REPO }}-amd64:${{ steps.version.outputs.VERSION }}`
-            - `${{ env.DOCKERHUB_REPO }}-armv7:${{ steps.version.outputs.VERSION }}`
             - `${{ env.DOCKERHUB_REPO }}-aarch64:${{ steps.version.outputs.VERSION }}`
 
             ## Installation

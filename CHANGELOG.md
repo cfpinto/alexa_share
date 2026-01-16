@@ -17,5 +17,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sortable columns (Name, Domain, Area)
 - Publish changes dialog with confirmation
 - Home Assistant ingress support for seamless integration
-- Multi-architecture support (amd64, armv7, aarch64)
+- Multi-architecture support (amd64, aarch64)
 - Responsive design for mobile and desktop
