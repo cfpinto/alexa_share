@@ -232,13 +232,15 @@ export default function Home() {
 									</div>
 								</div>
 							</CardHeader>
-							<CardBody className="overflow-scroll px-0">
+							<CardBody className="px-0">
 								{isSuccess && (
-									<SortableTable
-										columns={createTableHeaders(onSyncedChanged)}
-										data={data[page]}
-										onSort={onSort}
-									/>
+									<div className="max-w-[calc(100vw-4rem)] overflow-x-auto">
+										<SortableTable
+											columns={createTableHeaders(onSyncedChanged)}
+											data={data[page]}
+											onSort={onSort}
+										/>
+									</div>
 								)}
 							</CardBody>
 							<CardFooter className="flex items-center justify-between border-t border-ha-light-divider dark:border-ha-dark-divider p-4">

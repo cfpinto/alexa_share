@@ -76,7 +76,7 @@ test.describe("Entity Loading", () => {
 
 		// Check for entity data from our mock
 		await expect(
-			page.getByText("Living Room Ceiling Light").first(),
+			page.getByText("Living Room Ceiling Light").last(),
 		).toBeVisible({ timeout: 10000 });
 	});
 
@@ -86,7 +86,7 @@ test.describe("Entity Loading", () => {
 		await page.waitForSelector("table", { timeout: 10000 });
 
 		// Check for device name from mock data
-		await expect(page.getByText("Philips Hue Bridge").first()).toBeVisible({
+		await expect(page.getByText("Philips Hue Bridge").last()).toBeVisible({
 			timeout: 10000,
 		});
 	});
@@ -97,7 +97,7 @@ test.describe("Entity Loading", () => {
 		await page.waitForSelector("table", { timeout: 10000 });
 
 		// Check for manufacturer from mock data
-		await expect(page.getByText("Philips").first()).toBeVisible({
+		await expect(page.getByText("Philips").last()).toBeVisible({
 			timeout: 10000,
 		});
 	});
@@ -109,7 +109,7 @@ test.describe("Search Functionality", () => {
 
 		// Wait for entities to load
 		await page.waitForSelector("table", { timeout: 10000 });
-		await expect(page.getByText("Living Room Ceiling Light")).toBeVisible({
+		await expect(page.getByText("Living Room Ceiling Light").last()).toBeVisible({
 			timeout: 10000,
 		});
 
@@ -118,10 +118,10 @@ test.describe("Search Functionality", () => {
 		await searchInput.fill("Coffee");
 
 		// Should show Coffee Maker
-		await expect(page.getByText("Coffee Maker")).toBeVisible();
+		await expect(page.getByText("Coffee Maker").last()).toBeVisible();
 
 		// Should not show Living Room Ceiling Light
-		await expect(page.getByText("Living Room Ceiling Light")).not.toBeVisible();
+		await expect(page.getByText("Living Room Ceiling Light").last()).not.toBeVisible();
 	});
 
 	test("should filter by entity ID", async ({ page }) => {
@@ -132,7 +132,7 @@ test.describe("Search Functionality", () => {
 		const searchInput = page.getByRole("textbox");
 		await searchInput.fill("climate.thermostat");
 
-		await expect(page.getByText("Main Thermostat")).toBeVisible();
+		await expect(page.getByText("Main Thermostat").last()).toBeVisible();
 	});
 
 	test("should filter by manufacturer", async ({ page }) => {
@@ -144,7 +144,7 @@ test.describe("Search Functionality", () => {
 		const searchInput = page.getByRole("textbox");
 		await searchInput.fill("Ecobee");
 
-		await expect(page.getByText("Smart Thermostat").first()).toBeVisible();
+		await expect(page.getByText("Smart Thermostat").last()).toBeVisible();
 	});
 });
 
@@ -165,7 +165,7 @@ test.describe("Tab Filtering", () => {
 		// Only synced entities should be visible
 		// Based on our mock config, light.living_room_ceiling is synced
 		await expect(
-			page.getByText("Living Room Ceiling Light").first(),
+			page.getByText("Living Room Ceiling Light").last(),
 		).toBeVisible();
 	});
 
@@ -183,7 +183,7 @@ test.describe("Tab Filtering", () => {
 		await unsyncedTab.click({ force: true });
 
 		// Unsynced entities should be visible
-		await expect(page.getByText("Coffee Maker")).toBeVisible();
+		await expect(page.getByText("Coffee Maker").last()).toBeVisible();
 	});
 
 	test("should show all entities when All tab is clicked", async ({
@@ -205,9 +205,9 @@ test.describe("Tab Filtering", () => {
 
 		// All entities should be visible
 		await expect(
-			page.getByText("Living Room Ceiling Light").first(),
+			page.getByText("Living Room Ceiling Light").last(),
 		).toBeVisible();
-		await expect(page.getByText("Coffee Maker")).toBeVisible();
+		await expect(page.getByText("Coffee Maker").last()).toBeVisible();
 	});
 });
 

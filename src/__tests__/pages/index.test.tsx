@@ -240,22 +240,22 @@ describe("Home Page", () => {
 		it("should render table with entities", () => {
 			renderWithProviders(<Home />);
 
-			expect(screen.getByText("Philips Hue")).toBeInTheDocument();
-			expect(screen.getByText("Smart Switch")).toBeInTheDocument();
+			expect(screen.getAllByText("Philips Hue").length).toEqual(2);
+			expect(screen.getAllByText("Smart Switch").length).toEqual(2);
 		});
 
 		it("should display entity names", () => {
 			renderWithProviders(<Home />);
 
-			expect(screen.getByText("Living Room Light")).toBeInTheDocument();
-			expect(screen.getByText("Bedroom Switch")).toBeInTheDocument();
+			expect(screen.getAllByText("Living Room Light").length).toEqual(2);
+			expect(screen.getAllByText("Bedroom Switch").length).toEqual(2);
 		});
 
 		it("should display entity IDs", () => {
 			renderWithProviders(<Home />);
 
-			expect(screen.getByText("light.living_room")).toBeInTheDocument();
-			expect(screen.getByText("switch.bedroom")).toBeInTheDocument();
+			expect(screen.getAllByText("light.living_room").length).toEqual(2);
+			expect(screen.getAllByText("switch.bedroom").length).toEqual(2);
 		});
 	});
 
@@ -310,7 +310,7 @@ describe("Home Page", () => {
 			const searchInput = screen.getByRole("textbox");
 			await user.type(searchInput, "Philips");
 
-			expect(screen.getByText("Philips Hue")).toBeInTheDocument();
+			expect(screen.getAllByText("Philips Hue").length).toEqual(2);
 			expect(screen.queryByText("Smart Switch")).not.toBeInTheDocument();
 		});
 
@@ -321,7 +321,7 @@ describe("Home Page", () => {
 			const searchInput = screen.getByRole("textbox");
 			await user.type(searchInput, "light.living");
 
-			expect(screen.getByText("Living Room Light")).toBeInTheDocument();
+			expect(screen.getAllByText("Living Room Light").length).toEqual(2);
 			expect(screen.queryByText("Bedroom Switch")).not.toBeInTheDocument();
 		});
 
@@ -333,7 +333,7 @@ describe("Home Page", () => {
 			await user.type(searchInput, "TP-Link");
 
 			expect(screen.queryByText("Philips Hue")).not.toBeInTheDocument();
-			expect(screen.getByText("Smart Switch")).toBeInTheDocument();
+			expect(screen.getAllByText("Smart Switch").length).toEqual(2);
 		});
 
 		it("should reset to page 0 when searching", async () => {
@@ -351,8 +351,8 @@ describe("Home Page", () => {
 		it("should show all entities by default", () => {
 			renderWithProviders(<Home />);
 
-			expect(screen.getByText("Philips Hue")).toBeInTheDocument();
-			expect(screen.getByText("Smart Switch")).toBeInTheDocument();
+			expect(screen.getAllByText("Philips Hue").length).toEqual(2);
+			expect(screen.getAllByText("Smart Switch").length).toEqual(2);
 		});
 
 		it("should filter synced entities when Synced tab clicked", async () => {
@@ -369,7 +369,7 @@ describe("Home Page", () => {
 				await user.click(syncedTab);
 			}
 
-			expect(screen.getByText("Philips Hue")).toBeInTheDocument();
+			expect(screen.getAllByText("Philips Hue").length).toEqual(2);
 			expect(screen.queryByText("Smart Switch")).not.toBeInTheDocument();
 		});
 
@@ -386,7 +386,7 @@ describe("Home Page", () => {
 			}
 
 			expect(screen.queryByText("Philips Hue")).not.toBeInTheDocument();
-			expect(screen.getByText("Smart Switch")).toBeInTheDocument();
+			expect(screen.getAllByText("Smart Switch").length).toEqual(2);
 		});
 	});
 
@@ -632,8 +632,8 @@ describe("Home Page", () => {
 			await user.click(sortButtons[0]);
 
 			// The table should still display both entities
-			expect(screen.getByText("Living Room Light")).toBeInTheDocument();
-			expect(screen.getByText("Bedroom Switch")).toBeInTheDocument();
+			expect(screen.getAllByText("Living Room Light").length).toEqual(2);
+			expect(screen.getAllByText("Bedroom Switch").length).toEqual(2);
 		});
 
 		it("should reverse sort direction when clicking same column twice", async () => {
@@ -648,8 +648,8 @@ describe("Home Page", () => {
 			await user.click(sortButtons[0]);
 
 			// Both entities should still be visible, just in different order
-			expect(screen.getByText("Philips Hue")).toBeInTheDocument();
-			expect(screen.getByText("Smart Switch")).toBeInTheDocument();
+			expect(screen.getAllByText("Philips Hue").length).toEqual(2);
+			expect(screen.getAllByText("Smart Switch").length).toEqual(2);
 		});
 
 		it("should change sort column when clicking different header", async () => {
@@ -666,8 +666,8 @@ describe("Home Page", () => {
 			await user.click(sortButtons[1]);
 
 			// Both entities should still be visible
-			expect(screen.getByText("Philips Hue")).toBeInTheDocument();
-			expect(screen.getByText("Smart Switch")).toBeInTheDocument();
+			expect(screen.getAllByText("Philips Hue").length).toEqual(2);
+			expect(screen.getAllByText("Smart Switch").length).toEqual(2);
 		});
 	});
 
@@ -698,7 +698,7 @@ describe("Home Page", () => {
 			mockUseGetEntities({ data: [entityWithoutArea] });
 			renderWithProviders(<Home />);
 
-			expect(screen.getByText("No Area Light")).toBeInTheDocument();
+			expect(screen.getAllByText("No Area Light").length).toEqual(2);
 		});
 	});
 

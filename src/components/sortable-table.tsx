@@ -5,6 +5,8 @@ import {
 	Switch,
 	Typography,
 } from "@material-tailwind/react";
+import classNames from "classnames";
+import { upperCase, upperFirst } from "lodash";
 import type { ChangeEvent } from "react";
 
 export type Action = {
@@ -24,6 +26,7 @@ export type CompositeColumn = {
 	key: string;
 	sortable?: boolean;
 	inline?: boolean;
+	collapseSmall?: string;
 	onchange?: (event: ChangeEvent<HTMLInputElement>) => void;
 };
 
@@ -87,7 +90,11 @@ function getInlineAction(item: Row, column: CompositeColumn) {
 	return;
 }
 
-function getColumnValue(item: Row, column: CompositeColumn) {
+function getColumnValue(
+	item: Row,
+	column: CompositeColumn,
+	includeLable = false,
+) {
 	const value = item[column.key];
 	if (isImage(value)) {
 		return <Avatar src={value.src} alt={value.alt} size="sm" />;
@@ -97,29 +104,61 @@ function getColumnValue(item: Row, column: CompositeColumn) {
 		return getInlineAction(item, column);
 	}
 
-	return (
+	return value.toString().trim().length > 0 ? (
 		<Typography
+			key={`typo-${column.key}-${item.id}`}
 			variant="small"
 			className="font-normal text-ha-light-text-secondary dark:text-ha-dark-text-secondary"
 		>
+			{includeLable && <strong>{column.label}: </strong>}
 			{value}
 		</Typography>
-	);
+	) : null;
 }
 
 export function SortableTable({ columns, data, onSort }: Props) {
+	const columsGroups = new Map<string, CompositeColumn[]>();
+	const headers = normalizeHeader(columns);
+
+	headers.forEach((header) => {
+		if (header.collapseSmall) {
+			if (!columsGroups.has(header.collapseSmall)) {
+				columsGroups.set(header.collapseSmall, []);
+			}
+			columsGroups.get(header.collapseSmall)?.push(header);
+		}
+	});
+
 	return (
 		<table className="mt-4 w-full min-w-max table-auto text-left text-ha-light-text dark:text-ha-dark-text">
 			<thead>
 				<tr>
-					{normalizeHeader(columns).map((head) => (
+					{Array.from(columsGroups.keys()).map((key) => (
 						<th
-							key={head.key}
-							className={`border-y border-ha-light-divider dark:border-ha-dark-divider bg-ha-light-sidebar/50 dark:bg-ha-dark-sidebar/50 p-4 transition-colors`}
+							key={key}
+							className={classNames(
+								"border-y border-ha-light-divider dark:border-ha-dark-divider bg-ha-light-sidebar/50 dark:bg-ha-dark-sidebar/50 p-4 transition-colors",
+								{ "lg:hidden": true },
+							)}
 						>
 							<Typography
 								variant="small"
-								color="blue-gray"
+								className="flex items-center justify-between gap-2 font-normal leading-none text-ha-light-text-secondary dark:text-ha-dark-text-secondary"
+							>
+								{upperFirst(key)}
+							</Typography>
+						</th>
+					))}
+					{headers.map((head) => (
+						<th
+							key={head.key}
+							className={classNames(
+								"border-y border-ha-light-divider dark:border-ha-dark-divider bg-ha-light-sidebar/50 dark:bg-ha-dark-sidebar/50 p-4 transition-colors",
+								{ "hidden lg:table-cell": !!head.collapseSmall },
+							)}
+						>
+							<Typography
+								variant="small"
 								className="flex items-center justify-between gap-2 font-normal leading-none text-ha-light-text-secondary dark:text-ha-dark-text-secondary"
 							>
 								{head.label}{" "}
@@ -140,15 +179,33 @@ export function SortableTable({ columns, data, onSort }: Props) {
 			<tbody>
 				{data?.map((item, index) => {
 					const isLast = index === data.length - 1;
-					const classes = isLast
-						? "p-4"
-						: "p-4 border-b border-ha-light-divider dark:border-ha-dark-divider";
 
 					return (
 						<tr key={item.id}>
-							{normalizeHeader(columns).map((column) => {
+							{Array.from(columsGroups.keys()).map((key) => (
+								<td
+									key={`${key}-${item.id}`}
+									className={classNames("p-4", {
+										"border-b border-ha-light-divider dark:border-ha-dark-divider":
+											!isLast,
+										"lg:hidden": true,
+									})}
+								>
+									{columsGroups
+										.get(key)
+										?.map((column) => getColumnValue(item, column, true))}
+								</td>
+							))}
+							{headers.map((column) => {
 								return (
-									<td className={classes} key={`${item.id}-${column.key}`}>
+									<td
+										className={classNames("p-4", {
+											"border-b border-ha-light-divider dark:border-ha-dark-divider":
+												!isLast,
+											"hidden lg:table-cell": !!column.collapseSmall,
+										})}
+										key={`${item.id}-${column.key}`}
+									>
 										{getColumnValue(item, column)}
 									</td>
 								);

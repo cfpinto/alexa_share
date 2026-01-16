@@ -18,11 +18,26 @@ export const tableQuickFilters = [
 export const createTableHeaders = (
 	onChange: (event: ChangeEvent<HTMLInputElement>) => void,
 ) => [
-	{ label: "Device", key: "device_name", sortable: true },
-	{ label: "Name", key: "entity_name", sortable: true },
-	{ label: "Entity Id", key: "entity_id", sortable: true },
-	{ label: "Manufacturer", key: "manufacturer", sortable: true },
-	{ label: "Area", key: "area", sortable: true },
+	{
+		label: "Device",
+		key: "device_name",
+		sortable: true,
+		collapseSmall: "info",
+	},
+	{ label: "Name", key: "entity_name", sortable: true, collapseSmall: "info" },
+	{
+		label: "Entity Id",
+		key: "entity_id",
+		sortable: true,
+		collapseSmall: "info",
+	},
+	{
+		label: "Manufacturer",
+		key: "manufacturer",
+		sortable: true,
+		collapseSmall: "info",
+	},
+	{ label: "Area", key: "area", sortable: true, collapseSmall: "info" },
 	{
 		label: "Synced",
 		key: "shared",
