@@ -52,14 +52,21 @@ Just a clean, intuitive UI that puts you in control.
 
 ## 🛠️ Installation
 
-1. Add this repository to your Home Assistant add-on store
-2. Install **Alexa Share**
-3. Start the add-on
-4. Open the web UI
-5. Choose which entities you want Alexa to see
-6. Reload the Alexa integration
+### Quick Install
 
-That’s it — Alexa now only knows what _you_ want it to know.
+[![Add Repository](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fcfpinto%2Falexa_share)
+
+### Manual Installation
+
+1. Go to **Settings** > **Add-ons** > **Add-on Store**
+2. Click the menu (⋮) > **Repositories**
+3. Add: `https://github.com/cfpinto/alexa_share`
+4. Find and install **Alexa Share**
+5. Start the add-on and open the web UI
+6. Choose which entities you want Alexa to see
+7. Click **Publish** and reload the Alexa integration
+
+That's it — Alexa now only knows what _you_ want it to know.
 
 ---
 
@@ -67,16 +74,16 @@ That’s it — Alexa now only knows what _you_ want it to know.
 
 Smart homes are personal. Not every sensor, switch, or automation needs to be visible to your voice assistant. Alexa Share gives you the power to curate your Alexa experience so it feels intentional, tidy, and private.
 
-If you’ve ever wished for a simple way to manage Alexa’s visibility into your Home Assistant setup, this add-on is exactly what you’ve been waiting for.
+If you've ever wished for a simple way to manage Alexa's visibility into your Home Assistant setup, this add-on is exactly what you've been waiting for.
 
 ---
 
-If you'd like, I can also generate:
+## 📖 Documentation
 
-- A matching project logo
-- A shorter or more marketing‑style README
-- A technical README for developers
-- A screenshot section with placeholders
-- A full GitHub release description
+For detailed usage instructions, configuration options, and troubleshooting, see the [Documentation](DOCS.md).
 
-Just tell me what direction you want to take it.
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
