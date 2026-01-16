@@ -20,6 +20,9 @@ describe("/api/publish-alexa-config", () => {
 			status: statusMock as unknown as NextApiResponse["status"],
 		};
 
+		// Suppress console.error output during tests
+		vi.spyOn(console, "error").mockImplementation(() => {});
+
 		// Clear all mocks before each test
 		vi.clearAllMocks();
 	});

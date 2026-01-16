@@ -6,12 +6,50 @@ const CONFIG_PATH = `${process.env.HA_CONF_PATH ?? "/"}homeassistant/configurati
 const BACKUP_PATH = `${process.env.HA_CONF_PATH ?? "/"}homeassistant/configuration.yaml.backup`;
 
 /**
+ * Wrapper class for Home Assistant custom YAML tags
+ * This preserves the tag type so it can be properly serialized back to YAML
+ */
+export class HACustomTag {
+	constructor(
+		public tag: string,
+		public value: string,
+	) {}
+}
+
+/**
+ * Creates a js-yaml Type that can both parse and serialize HA custom tags
+ */
+function createHATagType(tagName: string): yaml.Type {
+	return new yaml.Type(tagName, {
+		kind: "scalar",
+		construct: (data: string) => new HACustomTag(tagName, data),
+		instanceOf: HACustomTag,
+		predicate: (obj: unknown): obj is HACustomTag =>
+			obj instanceof HACustomTag && obj.tag === tagName,
+		represent: (obj: object) => (obj as HACustomTag).value,
+	});
+}
+
+/**
+ * Custom YAML schema that handles Home Assistant tags for both parsing and dumping
+ */
+const HA_YAML_SCHEMA = yaml.DEFAULT_SCHEMA.extend([
+	createHATagType("!include"),
+	createHATagType("!secret"),
+	createHATagType("!env_var"),
+	createHATagType("!input"),
+	createHATagType("!include_dir_list"),
+	createHATagType("!include_dir_named"),
+	createHATagType("!include_dir_merge_list"),
+	createHATagType("!include_dir_merge_named"),
+]);
+
+/**
  * Reads the Home Assistant configuration file
  */
 export async function readHAConfig(): Promise<string> {
 	try {
-		const content = await fs.readFile(CONFIG_PATH, "utf-8");
-		return content;
+		return await fs.readFile(CONFIG_PATH, "utf-8");
 	} catch (error) {
 		if ((error as NodeJS.ErrnoException).code === "ENOENT") {
 			throw new Error(`Configuration file not found at ${CONFIG_PATH}`);
@@ -27,47 +65,23 @@ export async function readHAConfig(): Promise<string> {
  */
 export function parseYAML(content: string): HaConfig {
 	try {
-		// Create a schema that ignores Home Assistant custom tags
-		const IGNORE_TAGS_SCHEMA = yaml.DEFAULT_SCHEMA.extend([
-			new yaml.Type("!include", {
-				kind: "scalar",
-				construct: (data) => `!include ${data}`, // Keep as string
-			}),
-			new yaml.Type("!secret", {
-				kind: "scalar",
-				construct: (data) => `!secret ${data}`,
-			}),
-			new yaml.Type("!env_var", {
-				kind: "scalar",
-				construct: (data) => `!env_var ${data}`,
-			}),
-			new yaml.Type("!input", {
-				kind: "scalar",
-				construct: (data) => `!input ${data}`,
-			}),
-			new yaml.Type("!include_dir_list", {
-				kind: "scalar",
-				construct: (data) => `!include_dir_list ${data}`,
-			}),
-			new yaml.Type("!include_dir_named", {
-				kind: "scalar",
-				construct: (data) => `!include_dir_named ${data}`,
-			}),
-			new yaml.Type("!include_dir_merge_list", {
-				kind: "scalar",
-				construct: (data) => `!include_dir_merge_list ${data}`,
-			}),
-			new yaml.Type("!include_dir_merge_named", {
-				kind: "scalar",
-				construct: (data) => `!include_dir_merge_named ${data}`,
-			}),
-		]);
-
-		return (yaml.load(content, { schema: IGNORE_TAGS_SCHEMA }) ||
-			{}) as HaConfig;
+		return (yaml.load(content, { schema: HA_YAML_SCHEMA }) || {}) as HaConfig;
 	} catch (error) {
 		throw new Error(`Failed to parse YAML: ${(error as Error).message}`);
 	}
+}
+
+/**
+ * Dumps a config object to YAML, preserving Home Assistant custom tags
+ */
+export function dumpYAML(config: HaConfig): string {
+	return yaml.dump(config, {
+		schema: HA_YAML_SCHEMA,
+		indent: 2,
+		lineWidth: -1,
+		noRefs: true,
+		sortKeys: false,
+	});
 }
 
 /**
@@ -163,13 +177,8 @@ export async function updateAlexaConfiguration(entityIds: string[]): Promise<{
 	// Update Alexa configuration
 	const updatedConfig = updateAlexaConfig(parsedConfig, entityIds);
 
-	// Convert back to YAML
-	const updatedYaml = yaml.dump(updatedConfig, {
-		indent: 2,
-		lineWidth: -1,
-		noRefs: true,
-		sortKeys: false,
-	});
+	// Convert back to YAML using the same schema to preserve custom tags
+	const updatedYaml = dumpYAML(updatedConfig);
 
 	// Write updated configuration
 	await writeHAConfig(updatedYaml);

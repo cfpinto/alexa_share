@@ -9,6 +9,7 @@ export default defineConfig({
 		environment: "jsdom",
 		globals: true,
 		setupFiles: ["./src/test/setup.ts"],
+		exclude: ["node_modules", "e2e"],
 		coverage: {
 			provider: "v8",
 			reporter: ["text", "json", "html", "lcov"],
@@ -24,10 +25,10 @@ export default defineConfig({
 				"coverage/",
 			],
 			thresholds: {
-				lines: 73,
-				functions: 73,
-				branches: 73,
-				statements: 73,
+				lines: 90,
+				functions: 90,
+				branches: 90,
+				statements: 90,
 			},
 		},
 	},

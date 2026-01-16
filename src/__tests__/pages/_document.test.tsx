@@ -1,5 +1,15 @@
 import { render } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+// Suppress expected DOM nesting warning when testing Document component
+// (render() creates a <div> container, but <html> cannot be a child of <div>)
+beforeEach(() => {
+	vi.spyOn(console, "error").mockImplementation(() => {});
+});
+
+afterEach(() => {
+	vi.restoreAllMocks();
+});
 
 // Override Next.js imports before importing the component
 vi.mock("next/document", () => ({

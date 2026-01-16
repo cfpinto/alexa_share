@@ -1,16 +1,19 @@
 import fs from "node:fs/promises";
 import { camelCase, mapKeys } from "lodash";
+import { DOMAINS } from "@/guards/home-assistant-type.guard";
 
 export const OPTIONS_PATH = `${process.env.HA_CONF_PATH ?? "/"}data/options.json`;
 
 export interface AddonOptions {
 	haWebsocketUrl?: string;
 	haAccessToken?: string;
+	haEntityDomains?: string[];
 }
 
 export const DEFAULT_OPTIONS: AddonOptions = {
 	haWebsocketUrl: "http://homeassistant.local:8123",
-	haAccessToken: "",
+	haAccessToken: undefined,
+	haEntityDomains: DOMAINS,
 };
 
 let cachedOptions: AddonOptions | null = null;

@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import handler from "./health";
 
 describe("/api/health", () => {
@@ -7,6 +7,7 @@ describe("/api/health", () => {
 	let res: Partial<NextApiResponse>;
 	let jsonMock: ReturnType<typeof vi.fn>;
 	let statusMock: ReturnType<typeof vi.fn>;
+	const originalEnv = process.env.npm_package_version;
 
 	beforeEach(() => {
 		// Mock response object
@@ -16,6 +17,15 @@ describe("/api/health", () => {
 		res = {
 			status: statusMock as unknown as NextApiResponse["status"],
 		};
+	});
+
+	afterEach(() => {
+		// Restore original environment variable
+		if (originalEnv !== undefined) {
+			process.env.npm_package_version = originalEnv;
+		} else {
+			delete process.env.npm_package_version;
+		}
 	});
 
 	it("should return 200 with health check data", () => {
@@ -75,5 +85,29 @@ describe("/api/health", () => {
 				status: "ok",
 			}),
 		);
+	});
+
+	it("should use npm_package_version when set", () => {
+		process.env.npm_package_version = "2.5.0";
+		req = {
+			method: "GET",
+		};
+
+		handler(req as NextApiRequest, res as NextApiResponse);
+
+		const responseData = jsonMock.mock.calls[0][0];
+		expect(responseData.version).toBe("2.5.0");
+	});
+
+	it("should fallback to 1.0.0 when npm_package_version is not set", () => {
+		delete process.env.npm_package_version;
+		req = {
+			method: "GET",
+		};
+
+		handler(req as NextApiRequest, res as NextApiResponse);
+
+		const responseData = jsonMock.mock.calls[0][0];
+		expect(responseData.version).toBe("1.0.0");
 	});
 });

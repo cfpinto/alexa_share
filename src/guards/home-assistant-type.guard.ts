@@ -8,7 +8,7 @@ import {
 } from "@/types/home-assistant.types";
 import type { WithRequiredProperty } from "@/types/utility.types";
 
-const domains = [
+export const DOMAINS = [
 	"switch",
 	"scene",
 	"sensor",
@@ -42,8 +42,10 @@ export const isAuthOk = (
 	data: MessageData<unknown>,
 ): data is MessageData<undefined> => data.type === MessageType.AUTH_OK;
 
-export const isValidEntity = (item: unknown): item is Entity =>
-	!!item &&
-	typeof item === "object" &&
-	Object.hasOwn(item, "entity_id") &&
-	domains.includes((item as Entity).entity_id.split(".").shift() ?? "");
+export const isValidEntity =
+	(domains: string[]) =>
+	(item: unknown): item is Entity =>
+		!!item &&
+		typeof item === "object" &&
+		Object.hasOwn(item, "entity_id") &&
+		domains.includes((item as Entity).entity_id.split(".")[0]);
