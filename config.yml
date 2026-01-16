@@ -1,12 +1,12 @@
-name: Alexa Share (Alpha)
+name: Alexa Share
 version: "1.0.1"
 slug: alexa_share
 description: "Select the entities you want to share with alexa. This add-on requires the homeassistant alexa integration."
 url: "https://github.com/cfpinto/alexa_share/"
+image: cfpinto/alexa-share-{arch}
 
 arch:
   - amd64
-  - armv7
   - aarch64
 
 startup: services

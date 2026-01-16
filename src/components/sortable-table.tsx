@@ -6,7 +6,7 @@ import {
 	Typography,
 } from "@material-tailwind/react";
 import classNames from "classnames";
-import { upperCase, upperFirst } from "lodash";
+import { upperFirst } from "lodash";
 import type { ChangeEvent } from "react";
 
 export type Action = {
