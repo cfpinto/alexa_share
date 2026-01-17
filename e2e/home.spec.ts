@@ -74,9 +74,9 @@ test.describe("Entity Loading", () => {
 		const table = page.locator("table");
 		await expect(table).toBeVisible();
 
-		// Check for entity data from our mock
+		// Check for device data from our mock (table shows device names, not entity names)
 		await expect(
-			page.getByText("Living Room Ceiling Light").last(),
+			page.getByText("Philips Hue Bridge").last(),
 		).toBeVisible({ timeout: 10000 });
 	});
 
@@ -109,19 +109,19 @@ test.describe("Search Functionality", () => {
 
 		// Wait for entities to load
 		await page.waitForSelector("table", { timeout: 10000 });
-		await expect(page.getByText("Living Room Ceiling Light").last()).toBeVisible({
+		await expect(page.getByText("Philips Hue Bridge").last()).toBeVisible({
 			timeout: 10000,
 		});
 
-		// Search for "Coffee"
+		// Search for "Smart Plug" (device name for coffee maker switch)
 		const searchInput = page.getByRole("textbox");
-		await searchInput.fill("Coffee");
+		await searchInput.fill("Smart Plug");
 
-		// Should show Coffee Maker
-		await expect(page.getByText("Coffee Maker").last()).toBeVisible();
+		// Should show Smart Plug device
+		await expect(page.getByText("Smart Plug").last()).toBeVisible();
 
-		// Should not show Living Room Ceiling Light
-		await expect(page.getByText("Living Room Ceiling Light").last()).not.toBeVisible();
+		// Should not show Philips Hue Bridge
+		await expect(page.getByText("Philips Hue Bridge")).not.toBeVisible();
 	});
 
 	test("should filter by entity ID", async ({ page }) => {
@@ -132,7 +132,8 @@ test.describe("Search Functionality", () => {
 		const searchInput = page.getByRole("textbox");
 		await searchInput.fill("climate.thermostat");
 
-		await expect(page.getByText("Main Thermostat").last()).toBeVisible();
+		// Should show Smart Thermostat device (for climate.thermostat entity)
+		await expect(page.getByText("Smart Thermostat").last()).toBeVisible();
 	});
 
 	test("should filter by manufacturer", async ({ page }) => {
@@ -163,9 +164,9 @@ test.describe("Tab Filtering", () => {
 		await syncedTab.click({ force: true });
 
 		// Only synced entities should be visible
-		// Based on our mock config, light.living_room_ceiling is synced
+		// Based on our mock config, light.living_room_ceiling is synced (device: Philips Hue Bridge)
 		await expect(
-			page.getByText("Living Room Ceiling Light").last(),
+			page.getByText("Philips Hue Bridge").last(),
 		).toBeVisible();
 	});
 
@@ -182,8 +183,8 @@ test.describe("Tab Filtering", () => {
 		const unsyncedTab = tabList.getByText("Unsynced");
 		await unsyncedTab.click({ force: true });
 
-		// Unsynced entities should be visible
-		await expect(page.getByText("Coffee Maker").last()).toBeVisible();
+		// Unsynced entities should be visible (Smart Plug is device for coffee maker switch)
+		await expect(page.getByText("Smart Plug").last()).toBeVisible();
 	});
 
 	test("should show all entities when All tab is clicked", async ({
@@ -203,11 +204,11 @@ test.describe("Tab Filtering", () => {
 		// Then click on All tab
 		await tabList.getByText("All").click({ force: true });
 
-		// All entities should be visible
+		// All entities should be visible (device names)
 		await expect(
-			page.getByText("Living Room Ceiling Light").last(),
+			page.getByText("Philips Hue Bridge").last(),
 		).toBeVisible();
-		await expect(page.getByText("Coffee Maker").last()).toBeVisible();
+		await expect(page.getByText("Smart Plug").last()).toBeVisible();
 	});
 });
 
@@ -352,5 +353,167 @@ test.describe("Sorting", () => {
 
 		// Table should still be visible (no errors)
 		await expect(page.locator("table")).toBeVisible();
+	});
+});
+
+test.describe("Dropdown Filters", () => {
+	test("should display dropdown filter buttons", async ({ page }) => {
+		await page.goto("/");
+
+		await page.waitForSelector("table", { timeout: 10000 });
+
+		// Should have two "All" buttons for the dropdown filters (plus the tab)
+		const allButtons = page.locator("button").filter({ hasText: "All" });
+		const count = await allButtons.count();
+		expect(count).toBeGreaterThanOrEqual(2);
+	});
+
+	test("should filter by domain using dropdown", async ({ page }) => {
+		await page.goto("/");
+
+		await page.waitForSelector("table", { timeout: 10000 });
+		await waitForToastToDismiss(page);
+
+		// Initially multiple device types should be visible
+		await expect(page.getByText("Philips Hue Bridge").last()).toBeVisible();
+		await expect(page.getByText("Smart Plug").last()).toBeVisible();
+
+		// Click the first "All" dropdown button (primary filter)
+		const primaryDropdown = page.locator("button").filter({ hasText: "All" }).first();
+		await primaryDropdown.click();
+
+		// Select "Domain" from the menu
+		await page.getByRole("menuitem", { name: "Domain" }).click();
+
+		// Click the secondary dropdown (now shows "All")
+		const secondaryDropdown = page.locator("button").filter({ hasText: "All" }).first();
+		await secondaryDropdown.click();
+
+		// Select "Light" domain from menu
+		await page.getByRole("menuitem", { name: "Light" }).click();
+
+		// Should show light entities (Philips Hue Bridge is the device for lights)
+		await expect(page.getByText("Philips Hue Bridge").last()).toBeVisible();
+
+		// Should not show switch entities (Smart Plug is device for switches)
+		await expect(page.getByText("Smart Plug")).not.toBeVisible();
+	});
+
+	test("should filter by area using dropdown", async ({ page }) => {
+		await page.goto("/");
+
+		await page.waitForSelector("table", { timeout: 10000 });
+		await waitForToastToDismiss(page);
+
+		// Click the primary dropdown
+		const primaryDropdown = page.locator("button").filter({ hasText: "All" }).first();
+		await primaryDropdown.click();
+
+		// Select "Area" from the menu
+		await page.getByRole("menuitem", { name: "Area" }).click();
+
+		// Click the secondary dropdown
+		const secondaryDropdown = page.locator("button").filter({ hasText: "All" }).first();
+		await secondaryDropdown.click();
+
+		// Select "Kitchen" area from menu
+		await page.getByRole("menuitem", { name: "Kitchen" }).click();
+
+		// Should show kitchen entities (Smart Plug for coffee maker, Philips Hue Bridge for under cabinet light)
+		await expect(page.getByText("Smart Plug").last()).toBeVisible();
+
+		// Should not show hallway entities (Smart Thermostat is in hallway)
+		await expect(page.getByText("Smart Thermostat")).not.toBeVisible();
+	});
+
+	test("should filter by manufacturer using dropdown", async ({ page }) => {
+		await page.goto("/");
+
+		await page.waitForSelector("table", { timeout: 10000 });
+		await waitForToastToDismiss(page);
+
+		// Click the primary dropdown
+		const primaryDropdown = page.locator("button").filter({ hasText: "All" }).first();
+		await primaryDropdown.click();
+
+		// Select "Manufacturer" from the menu
+		await page.getByRole("menuitem", { name: "Manufacturer" }).click();
+
+		// Click the secondary dropdown
+		const secondaryDropdown = page.locator("button").filter({ hasText: "All" }).first();
+		await secondaryDropdown.click();
+
+		// Select "Ecobee" manufacturer from menu
+		await page.getByRole("menuitem", { name: "Ecobee" }).click();
+
+		// Should show Ecobee entities (Smart Thermostat device)
+		await expect(page.getByText("Smart Thermostat").last()).toBeVisible();
+
+		// Should not show Philips entities
+		await expect(page.getByText("Philips Hue Bridge")).not.toBeVisible();
+	});
+
+	test("should reset filter when selecting All in primary dropdown", async ({ page }) => {
+		await page.goto("/");
+
+		await page.waitForSelector("table", { timeout: 10000 });
+		await waitForToastToDismiss(page);
+
+		// First apply a filter
+		const primaryDropdown = page.locator("button").filter({ hasText: "All" }).first();
+		await primaryDropdown.click();
+		await page.getByRole("menuitem", { name: "Domain" }).click();
+
+		const secondaryDropdown = page.locator("button").filter({ hasText: "All" }).first();
+		await secondaryDropdown.click();
+		await page.getByRole("menuitem", { name: "Light" }).click();
+
+		// Verify filter is applied - Smart Plug (switch device) should not be visible
+		await expect(page.getByText("Smart Plug")).not.toBeVisible();
+
+		// Now reset by clicking the Domain button and selecting All
+		const domainButton = page.locator("button").filter({ hasText: "Domain" }).first();
+		await domainButton.click();
+		await page.getByRole("menuitem", { name: "All" }).click();
+
+		// All entities should be visible again
+		await expect(page.getByText("Philips Hue Bridge").last()).toBeVisible();
+		await expect(page.getByText("Smart Plug").last()).toBeVisible();
+	});
+
+	test("should disable secondary dropdown when no primary selection", async ({ page }) => {
+		await page.goto("/");
+
+		await page.waitForSelector("table", { timeout: 10000 });
+
+		// The secondary dropdown should be disabled initially
+		const secondaryDropdown = page.locator("button").filter({ hasText: "All" }).nth(1);
+		await expect(secondaryDropdown).toBeDisabled();
+	});
+
+	test("should combine dropdown filter with search", async ({ page }) => {
+		await page.goto("/");
+
+		await page.waitForSelector("table", { timeout: 10000 });
+		await waitForToastToDismiss(page);
+
+		// Apply domain filter for "Light"
+		const primaryDropdown = page.locator("button").filter({ hasText: "All" }).first();
+		await primaryDropdown.click();
+		await page.getByRole("menuitem", { name: "Domain" }).click();
+
+		const secondaryDropdown = page.locator("button").filter({ hasText: "All" }).first();
+		await secondaryDropdown.click();
+		await page.getByRole("menuitem", { name: "Light" }).click();
+
+		// Now also search for "kitchen" (to find kitchen_under_cabinet light)
+		const searchInput = page.getByRole("textbox");
+		await searchInput.fill("kitchen");
+
+		// Should show Philips Hue Bridge (device for kitchen under cabinet light)
+		await expect(page.getByText("Philips Hue Bridge").last()).toBeVisible();
+
+		// Verify entity ID is visible for the kitchen light
+		await expect(page.getByText("light.kitchen_under_cabinet").last()).toBeVisible();
 	});
 });

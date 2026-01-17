@@ -220,4 +220,31 @@ describe("SplitSearch", () => {
 		// useEffect should call onFilter on mount with empty values
 		expect(onFilter).toHaveBeenCalledWith("", "", "");
 	});
+
+	it("should reset reset search when secondary changes to no selection", async () => {
+		const onFilter = vi.fn();
+		const user = userEvent.setup();
+
+		render(
+			<SplitSearch
+				filters={mockFilters}
+				onFilter={onFilter}
+				primaryPlaceholder="All Stuff"
+				secondaryPlaceholder="All Other Stuff"
+			/>,
+		);
+
+		await user.click(screen.getByText("All Stuff"));
+		await user.click(screen.getByText("Light"));
+		await user.click(screen.getByText("All Other Stuff"));
+		await user.click(screen.getByText("Living Room"));
+
+		expect(onFilter).toHaveBeenLastCalledWith("light", "living_room", "");
+
+		await user.click(screen.getByText("All Other Stuff"));
+		expect(onFilter).toHaveBeenLastCalledWith("light", "", "");
+
+		await user.click(screen.getByText("All Stuff"));
+		expect(onFilter).toHaveBeenLastCalledWith("", "", "");
+	});
 });
