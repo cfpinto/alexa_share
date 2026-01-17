@@ -244,11 +244,12 @@ describe("Home Page", () => {
 			expect(screen.getAllByText("Smart Switch").length).toEqual(2);
 		});
 
-		it("should display entity names", () => {
+		it("should display device names", () => {
 			renderWithProviders(<Home />);
 
-			expect(screen.getAllByText("Living Room Light").length).toEqual(2);
-			expect(screen.getAllByText("Bedroom Switch").length).toEqual(2);
+			// Device names appear twice due to responsive table layout (collapsed + expanded)
+			expect(screen.getAllByText("Philips Hue").length).toEqual(2);
+			expect(screen.getAllByText("Smart Switch").length).toEqual(2);
 		});
 
 		it("should display entity IDs", () => {
@@ -321,8 +322,10 @@ describe("Home Page", () => {
 			const searchInput = screen.getByRole("textbox");
 			await user.type(searchInput, "light.living");
 
-			expect(screen.getAllByText("Living Room Light").length).toEqual(2);
-			expect(screen.queryByText("Bedroom Switch")).not.toBeInTheDocument();
+			// Should show Philips Hue (device name for light.living_room)
+			expect(screen.getAllByText("Philips Hue").length).toEqual(2);
+			// Should not show Smart Switch (device name for switch.bedroom)
+			expect(screen.queryByText("Smart Switch")).not.toBeInTheDocument();
 		});
 
 		it("should filter by manufacturer", async () => {
@@ -344,6 +347,44 @@ describe("Home Page", () => {
 			await user.type(searchInput, "test");
 
 			expect(screen.getByText(/Page 1 of/)).toBeInTheDocument();
+		});
+
+		it("should filter by domain using dropdown filters", async () => {
+			const user = userEvent.setup();
+			renderWithProviders(<Home />);
+
+			// Both entities should be visible initially
+			expect(screen.getAllByText("Philips Hue").length).toEqual(2);
+			expect(screen.getAllByText("Smart Switch").length).toEqual(2);
+
+			// Find the primary dropdown button (first "All" text that's in a button)
+			const allTexts = screen.getAllByText("All");
+			// First one is the tab, find the button one
+			const primaryDropdown = allTexts
+				.map((el) => el.closest("button"))
+				.find((btn) => btn !== null) as HTMLButtonElement;
+			expect(primaryDropdown).not.toBeNull();
+			await user.click(primaryDropdown);
+
+			// Select "Domain" from the dropdown menu item
+			const domainMenuItems = screen.getAllByText("Domain");
+			await user.click(domainMenuItems[0]);
+
+			// Find secondary dropdown - it's the button with "All" text after Domain is selected
+			const secondaryAllTexts = screen.getAllByText("All");
+			const secondaryDropdown = secondaryAllTexts
+				.map((el) => el.closest("button"))
+				.find((btn) => btn !== null) as HTMLButtonElement;
+			expect(secondaryDropdown).not.toBeNull();
+			await user.click(secondaryDropdown);
+
+			// Select "Light" from the secondary dropdown
+			const lightMenuItems = screen.getAllByText("Light");
+			await user.click(lightMenuItems[0]);
+
+			// Only light entities should be visible (Philips Hue)
+			expect(screen.getAllByText("Philips Hue").length).toEqual(2);
+			expect(screen.queryByText("Smart Switch")).not.toBeInTheDocument();
 		});
 	});
 
@@ -614,7 +655,6 @@ describe("Home Page", () => {
 			renderWithProviders(<Home />);
 
 			expect(screen.getByText("Device")).toBeInTheDocument();
-			expect(screen.getByText("Name")).toBeInTheDocument();
 			expect(screen.getByText("Entity Id")).toBeInTheDocument();
 			expect(screen.getByText("Manufacturer")).toBeInTheDocument();
 			expect(screen.getByText("Area")).toBeInTheDocument();
@@ -631,9 +671,9 @@ describe("Home Page", () => {
 			// Click the first sort button (Device column)
 			await user.click(sortButtons[0]);
 
-			// The table should still display both entities
-			expect(screen.getAllByText("Living Room Light").length).toEqual(2);
-			expect(screen.getAllByText("Bedroom Switch").length).toEqual(2);
+			// The table should still display both device names
+			expect(screen.getAllByText("Philips Hue").length).toEqual(2);
+			expect(screen.getAllByText("Smart Switch").length).toEqual(2);
 		});
 
 		it("should reverse sort direction when clicking same column twice", async () => {
@@ -698,7 +738,8 @@ describe("Home Page", () => {
 			mockUseGetEntities({ data: [entityWithoutArea] });
 			renderWithProviders(<Home />);
 
-			expect(screen.getAllByText("No Area Light").length).toEqual(2);
+			// Table displays device.name, not entity name
+			expect(screen.getAllByText("Test Device").length).toEqual(2);
 		});
 	});
 
