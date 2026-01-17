@@ -80,6 +80,7 @@ function getInlineAction(item: Row, column: CompositeColumn) {
 	if (typeof value === "boolean") {
 		return (
 			<Switch
+				color="blue"
 				value={item.id}
 				defaultChecked={value}
 				onChange={column?.onchange}
