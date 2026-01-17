@@ -1,4 +1,3 @@
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { ArrowPathIcon, ArrowUpCircleIcon } from "@heroicons/react/24/solid";
 import {
 	Button,
@@ -6,18 +5,24 @@ import {
 	CardBody,
 	CardFooter,
 	CardHeader,
-	Input,
 	Tab,
 	Tabs,
 	TabsHeader,
 	Typography,
 } from "@material-tailwind/react";
-import { chunk, filter, orderBy } from "lodash";
+import { chunk, filter, orderBy, startCase } from "lodash";
 import Head from "next/head";
-import { type ChangeEvent, useEffect, useState } from "react";
+import {
+	type ChangeEvent,
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+} from "react";
 import toast from "react-hot-toast";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { type Row, SortableTable } from "@/components/sortable-table";
+import { type FilterOption, SplitSearch } from "@/components/split-search";
 import { createTableHeaders, tableQuickFilters } from "@/configs/entities";
 import { usePublishAlexaConfig } from "@/mutations/use-alexa-config.mutation";
 import { useGetEntities } from "@/queries/use-get-entities.query";
@@ -39,9 +44,72 @@ export default function Home() {
 	const [sortBy, setSortBy] = useState<string>("device_name");
 	const [sortDirection, setSortDirection] = useState<number>(1);
 	const [term, setTerm] = useState<string>("");
+	const [firstSelection, setFirstSelection] = useState<string>("");
+	const [secondSelection, setSecondSelection] = useState<string>("");
 	const [page, setPage] = useState<number>(0);
 	const [show, setShow] = useState<"all" | "synced" | "unsynced">("all");
 	const [showConfirmDialog, setShowConfirmDialog] = useState<boolean>(false);
+
+	// Build hierarchical filter options: domains with areas as children
+	const filterOptions: FilterOption[] = useMemo(() => {
+		if (!entities) {
+			return [];
+		}
+
+		const domains = new Map<string, FilterOption>();
+		const areas = new Map<string, FilterOption>();
+		const manufacturers = new Map<string, FilterOption>();
+
+		entities.forEach((entity) => {
+			const domain = entity.entity_id.split(".")[0];
+
+			// Add area as child of domain
+			if (entity.area) {
+				areas.set(entity.area.area_id, {
+					label: startCase(entity.area.name),
+					value: entity.area.area_id,
+				});
+			}
+
+			// Add domain with its areas as children
+			domains.set(domain, {
+				label: startCase(domain),
+				value: domain,
+			});
+
+			// Add manufacturer
+			if (entity.device.manufacturer) {
+				manufacturers.set(entity.device.manufacturer, {
+					label: startCase(entity.device.manufacturer),
+					value: entity.device.manufacturer,
+				});
+			}
+		});
+
+		return [
+			{
+				label: "Domain",
+				value: "domain",
+				children: Array.from(domains.values()).sort((a, b) =>
+					a.label.localeCompare(b.label),
+				),
+			},
+			{
+				label: "Area",
+				value: "area",
+				children: Array.from(areas.values()).sort((a, b) =>
+					a.label.localeCompare(b.label),
+				),
+			},
+			{
+				label: "Manufacturer",
+				value: "manufacturer",
+				children: Array.from(manufacturers.values()).sort((a, b) =>
+					a.label.localeCompare(b.label),
+				),
+			},
+		];
+	}, [entities]);
 
 	useEffect(() => {
 		if (isSuccess && !isLoading && !isError) {
@@ -72,11 +140,15 @@ export default function Home() {
 		setPage(page - 1);
 	};
 
-	const onSearch = (event: ChangeEvent<HTMLInputElement>) => {
-		event.stopPropagation();
-		setTerm(event.target.value);
-		setPage(0);
-	};
+	const onFilter = useCallback(
+		(primaryValue: string, secondaryValue: string, searchTerm: string) => {
+			setFirstSelection(primaryValue);
+			setSecondSelection(secondaryValue);
+			setTerm(searchTerm);
+			setPage(0);
+		},
+		[],
+	);
 
 	const onSyncedChanged = (event: ChangeEvent<HTMLInputElement>) => {
 		event.stopPropagation();
@@ -132,26 +204,27 @@ export default function Home() {
 
 	const filtered = filter(
 		entities?.map(
-			({ id, name, device, entity_id, entity_category, area, shared }) => ({
+			({ id, device, entity_id, entity_category, area, shared }) => ({
 				id,
 				entity_id,
 				entity_category,
 				shared,
-				entity_name: name ?? "",
 				device_name: device.name?.trim() ?? "",
 				manufacturer: device.manufacturer ?? "",
 				model: device.model ?? "",
 				area: area?.area_id ?? "",
+				domain: entity_id.split(".")[0],
 			}),
 		),
 		(item) =>
 			(item.device_name?.toString().match(new RegExp(term, "i")) ||
-				item.entity_name?.toString().match(new RegExp(term, "i")) ||
 				item.manufacturer?.toString().match(new RegExp(term, "i")) ||
 				item.entity_id?.toString().match(new RegExp(term, "i"))) &&
 			(show === "all" ||
 				(show === "synced" && item.shared) ||
-				(show === "unsynced" && !item.shared)),
+				(show === "unsynced" && !item.shared)) &&
+			(secondSelection === "" ||
+				item[firstSelection as keyof typeof item] === secondSelection),
 	);
 	const sorted = orderBy(
 		filtered,
@@ -223,13 +296,7 @@ export default function Home() {
 											))}
 										</TabsHeader>
 									</Tabs>
-									<div className="w-full md:w-72">
-										<Input
-											label="Search"
-											icon={<MagnifyingGlassIcon className="h-5 w-5" />}
-											onChange={onSearch}
-										/>
-									</div>
+									<SplitSearch filters={filterOptions} onFilter={onFilter} />
 								</div>
 							</CardHeader>
 							<CardBody className="px-0">

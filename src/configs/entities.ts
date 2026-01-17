@@ -24,7 +24,6 @@ export const createTableHeaders = (
 		sortable: true,
 		collapseSmall: "info",
 	},
-	{ label: "Name", key: "entity_name", sortable: true, collapseSmall: "info" },
 	{
 		label: "Entity Id",
 		key: "entity_id",
