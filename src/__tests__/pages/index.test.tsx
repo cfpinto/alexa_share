@@ -947,8 +947,7 @@ describe("Home Page", () => {
 			// Button should now show 50 - find the button with aria-haspopup="menu"
 			const allFifty = screen.getAllByText("50");
 			const updatedButton = allFifty.find(
-				(el) =>
-					el.closest("button")?.getAttribute("aria-haspopup") === "menu",
+				(el) => el.closest("button")?.getAttribute("aria-haspopup") === "menu",
 			);
 			expect(updatedButton).toBeInTheDocument();
 		});
