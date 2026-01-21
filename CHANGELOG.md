@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Filter entities by Area (Living Room, Kitchen, etc.)
 - Filter entities by Manufacturer (Philips, Ecobee, etc.)
 - Combined filtering: use dropdowns and text search together
+- Items per page dropdown with options: 10, 20, 50, 100, and All
 
 ### Changed
 - Sync toggle now displays blue color when active

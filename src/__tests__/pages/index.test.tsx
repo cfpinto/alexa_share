@@ -830,4 +830,127 @@ describe("Home Page", () => {
 			expect(prevButton).not.toBeDisabled();
 		});
 	});
+
+	describe("Items Per Page", () => {
+		const manyEntities: CompiledEntity[] = Array.from(
+			{ length: 25 },
+			(_, i) => ({
+				id: `entity-${i + 1}`,
+				entity_id: `light.entity_${i + 1}`,
+				name: `Entity ${i + 1}`,
+				entity_category: null,
+				shared: i % 2 === 0,
+				device: {
+					id: `device-${i + 1}`,
+					name: `Device ${i + 1}`,
+					manufacturer: `Manufacturer ${i + 1}`,
+					model: `Model ${i + 1}`,
+				},
+				area: {
+					area_id: `area-${i + 1}`,
+					name: `Area ${i + 1}`,
+				},
+			}),
+		);
+
+		it("should render items per page dropdown", () => {
+			mockUseGetEntities({ data: manyEntities });
+			renderWithProviders(<Home />);
+
+			expect(screen.getByText("Items per page:")).toBeInTheDocument();
+		});
+
+		it("should default to 10 items per page", () => {
+			mockUseGetEntities({ data: manyEntities });
+			renderWithProviders(<Home />);
+
+			// 25 items with 10 per page = 3 pages
+			expect(screen.getByText(/Page 1 of 3/)).toBeInTheDocument();
+		});
+
+		it("should change items per page when selecting 20", async () => {
+			const user = userEvent.setup();
+			mockUseGetEntities({ data: manyEntities });
+			renderWithProviders(<Home />);
+
+			// Open the items per page dropdown
+			const itemsPerPageButton = screen
+				.getByText("10")
+				.closest("button") as HTMLButtonElement;
+			await user.click(itemsPerPageButton);
+
+			// Select 20
+			const option20 = screen.getByRole("menuitem", { name: "20" });
+			await user.click(option20);
+
+			// 25 items with 20 per page = 2 pages
+			expect(screen.getByText(/Page 1 of 2/)).toBeInTheDocument();
+		});
+
+		it("should show all items on one page when selecting All", async () => {
+			const user = userEvent.setup();
+			mockUseGetEntities({ data: manyEntities });
+			renderWithProviders(<Home />);
+
+			// Open the items per page dropdown
+			const itemsPerPageButton = screen
+				.getByText("10")
+				.closest("button") as HTMLButtonElement;
+			await user.click(itemsPerPageButton);
+
+			// Select All - find the menu item specifically
+			const allOption = screen.getByRole("menuitem", { name: "All" });
+			await user.click(allOption);
+
+			// All items on one page
+			expect(screen.getByText(/Page 1 of 1/)).toBeInTheDocument();
+		});
+
+		it("should reset to page 1 when changing items per page", async () => {
+			const user = userEvent.setup();
+			mockUseGetEntities({ data: manyEntities });
+			renderWithProviders(<Home />);
+
+			// Navigate to page 2
+			const nextButton = screen.getByText("Next");
+			await user.click(nextButton);
+			expect(screen.getByText(/Page 2 of 3/)).toBeInTheDocument();
+
+			// Open the items per page dropdown
+			const itemsPerPageButton = screen
+				.getByText("10")
+				.closest("button") as HTMLButtonElement;
+			await user.click(itemsPerPageButton);
+
+			// Select 50
+			const option50 = screen.getByRole("menuitem", { name: "50" });
+			await user.click(option50);
+
+			// Should be back on page 1
+			expect(screen.getByText(/Page 1 of 1/)).toBeInTheDocument();
+		});
+
+		it("should display current items per page value in button", async () => {
+			const user = userEvent.setup();
+			mockUseGetEntities({ data: manyEntities });
+			renderWithProviders(<Home />);
+
+			// Open the items per page dropdown and select 50
+			const itemsPerPageButton = screen
+				.getByText("10")
+				.closest("button") as HTMLButtonElement;
+			await user.click(itemsPerPageButton);
+
+			const option50 = screen.getByRole("menuitem", { name: "50" });
+			await user.click(option50);
+
+			// Button should now show 50 - find the button with aria-haspopup="menu"
+			const allFifty = screen.getAllByText("50");
+			const updatedButton = allFifty.find(
+				(el) =>
+					el.closest("button")?.getAttribute("aria-haspopup") === "menu",
+			);
+			expect(updatedButton).toBeInTheDocument();
+		});
+	});
 });
