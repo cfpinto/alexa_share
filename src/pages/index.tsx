@@ -5,6 +5,10 @@ import {
 	CardBody,
 	CardFooter,
 	CardHeader,
+	Menu,
+	MenuHandler,
+	MenuItem,
+	MenuList,
 	Tab,
 	Tabs,
 	TabsHeader,
@@ -49,6 +53,9 @@ export default function Home() {
 	const [page, setPage] = useState<number>(0);
 	const [show, setShow] = useState<"all" | "synced" | "unsynced">("all");
 	const [showConfirmDialog, setShowConfirmDialog] = useState<boolean>(false);
+	const [itemsPerPage, setItemsPerPage] = useState<number | "all">(10);
+
+	const itemsPerPageOptions: (number | "all")[] = [10, 20, 50, 100, "all"];
 
 	// Build hierarchical filter options: domains with areas as children
 	const filterOptions: FilterOption[] = useMemo(() => {
@@ -231,7 +238,10 @@ export default function Home() {
 		sortBy,
 		sortDirection === 1 ? "asc" : "desc",
 	);
-	const data = chunk(sorted, 10) as unknown as Row[][];
+	const data =
+		itemsPerPage === "all"
+			? ([sorted] as unknown as Row[][])
+			: (chunk(sorted, itemsPerPage) as unknown as Row[][]);
 
 	return (
 		<>
@@ -317,25 +327,60 @@ export default function Home() {
 								>
 									Page {page + 1} of {data.length}
 								</Typography>
-								<div className="flex gap-2">
-									<Button
-										disabled={page === 0}
-										variant="outlined"
-										size="sm"
-										onClick={onPrevPageClick}
-										className="border-ha-light-divider dark:border-ha-dark-divider text-ha-light-text dark:text-ha-dark-text"
-									>
-										Previous
-									</Button>
-									<Button
-										disabled={page + 1 === data.length}
-										variant="outlined"
-										size="sm"
-										onClick={onNextPageClick}
-										className="border-ha-light-divider dark:border-ha-dark-divider text-ha-light-text dark:text-ha-dark-text"
-									>
-										Next
-									</Button>
+								<div className="flex items-center gap-4">
+									<div className="flex items-center gap-2">
+										<Typography
+											variant="small"
+											className="font-normal text-ha-light-text-secondary dark:text-ha-dark-text-secondary"
+										>
+											Items per page:
+										</Typography>
+										<Menu>
+											<MenuHandler>
+												<Button
+													variant="outlined"
+													size="sm"
+													className="border-ha-light-divider dark:border-ha-dark-divider text-ha-light-text dark:text-ha-dark-text"
+												>
+													{itemsPerPage === "all" ? "All" : itemsPerPage}
+												</Button>
+											</MenuHandler>
+											<MenuList className="bg-ha-light-card dark:bg-ha-dark-card border-ha-light-divider dark:border-ha-dark-divider">
+												{itemsPerPageOptions.map((option) => (
+													<MenuItem
+														key={option}
+														onClick={() => {
+															setItemsPerPage(option);
+															setPage(0);
+														}}
+														className="text-ha-light-text dark:text-ha-dark-text hover:bg-ha-light-bg dark:hover:bg-ha-dark-bg"
+													>
+														{option === "all" ? "All" : option}
+													</MenuItem>
+												))}
+											</MenuList>
+										</Menu>
+									</div>
+									<div className="flex gap-2">
+										<Button
+											disabled={page === 0}
+											variant="outlined"
+											size="sm"
+											onClick={onPrevPageClick}
+											className="border-ha-light-divider dark:border-ha-dark-divider text-ha-light-text dark:text-ha-dark-text"
+										>
+											Previous
+										</Button>
+										<Button
+											disabled={page + 1 === data.length}
+											variant="outlined"
+											size="sm"
+											onClick={onNextPageClick}
+											className="border-ha-light-divider dark:border-ha-dark-divider text-ha-light-text dark:text-ha-dark-text"
+										>
+											Next
+										</Button>
+									</div>
 								</div>
 							</CardFooter>
 						</Card>

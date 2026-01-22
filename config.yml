@@ -1,5 +1,5 @@
 name: Alexa Share
-version: "1.0.2"
+version: "1.0.3"
 slug: alexa_share
 description: "Select the entities you want to share with alexa. This add-on requires the homeassistant alexa integration."
 url: "https://github.com/cfpinto/alexa_share/"
