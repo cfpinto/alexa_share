@@ -57,6 +57,7 @@ pnpm docker:run:dev   # Run Docker container locally
 
 ### Unit Tests (Vitest)
 - Located in `src/**/*.test.ts(x)` files alongside source code
+- Exception: tests for `src/pages/` (pages and API routes) go in `src/__tests__/pages/`. Next.js builds every file in `src/pages/` as a route, so a test file there becomes a public endpoint
 - Uses `@testing-library/react` for component testing
 - Coverage reports generated with `@vitest/coverage-v8`
 

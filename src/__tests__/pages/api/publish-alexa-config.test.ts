@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import * as haConfigUtil from "../../utils/ha-config.util";
-import handler from "./publish-alexa-config";
+import handler from "@/pages/api/publish-alexa-config";
+import * as haConfigUtil from "@/utils/ha-config.util";
 
-vi.mock("../../utils/ha-config.util");
+vi.mock("@/utils/ha-config.util");
 
 describe("/api/publish-alexa-config", () => {
 	let req: Partial<NextApiRequest>;
