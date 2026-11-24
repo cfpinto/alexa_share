@@ -33,26 +33,34 @@ import Document from "../../pages/_document";
 
 describe("Document", () => {
 	it("should render Html component with lang='en'", () => {
-		const { container } = render(<Document />);
+		render(<Document />);
+		// React 19 hoists <html>, <head> and <body> to the document singletons
+		const container = document;
 		const html = container.querySelector('[data-testid="mock-html"]');
 		expect(html).toBeInTheDocument();
 		expect(html).toHaveAttribute("lang", "en");
 	});
 
 	it("should render Head component", () => {
-		const { container } = render(<Document />);
+		render(<Document />);
+		// React 19 hoists <html>, <head> and <body> to the document singletons
+		const container = document;
 		expect(
 			container.querySelector('[data-testid="mock-head"]'),
 		).toBeInTheDocument();
 	});
 
 	it("should render body element", () => {
-		const { container } = render(<Document />);
+		render(<Document />);
+		// React 19 hoists <html>, <head> and <body> to the document singletons
+		const container = document;
 		expect(container.querySelector("body")).toBeInTheDocument();
 	});
 
 	it("should render Main component inside body", () => {
-		const { container } = render(<Document />);
+		render(<Document />);
+		// React 19 hoists <html>, <head> and <body> to the document singletons
+		const container = document;
 		const body = container.querySelector("body");
 		const main = container.querySelector('[data-testid="mock-main"]');
 		expect(main).toBeInTheDocument();
@@ -60,7 +68,9 @@ describe("Document", () => {
 	});
 
 	it("should render NextScript component inside body", () => {
-		const { container } = render(<Document />);
+		render(<Document />);
+		// React 19 hoists <html>, <head> and <body> to the document singletons
+		const container = document;
 		const body = container.querySelector("body");
 		const script = container.querySelector('[data-testid="mock-next-script"]');
 		expect(script).toBeInTheDocument();
@@ -68,7 +78,9 @@ describe("Document", () => {
 	});
 
 	it("should have correct document structure", () => {
-		const { container } = render(<Document />);
+		render(<Document />);
+		// React 19 hoists <html>, <head> and <body> to the document singletons
+		const container = document;
 
 		// Check hierarchy: Html > Head + body > (Main + NextScript)
 		const html = container.querySelector('[data-testid="mock-html"]');

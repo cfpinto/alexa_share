@@ -1,5 +1,19 @@
 import fs from "node:fs/promises";
-import yaml from "js-yaml";
+import {
+	binaryTag,
+	CORE_SCHEMA,
+	DUMP_SCHEMA,
+	defineScalarTag,
+	dump,
+	loadAll,
+	mergeTag,
+	NOT_RESOLVED,
+	omapTag,
+	pairsTag,
+	type ScalarTagDefinition,
+	setTag,
+	timestampTag,
+} from "js-yaml";
 import type { HaConfig } from "@/types/home-assistant.types";
 
 const CONFIG_PATH = `${process.env.HA_CONF_PATH ?? "/"}homeassistant/configuration.yaml`;
@@ -17,32 +31,47 @@ export class HACustomTag {
 }
 
 /**
- * Creates a js-yaml Type that can both parse and serialize HA custom tags
+ * Creates a js-yaml scalar tag that can both parse and serialize HA custom tags
  */
-function createHATagType(tagName: string): yaml.Type {
-	return new yaml.Type(tagName, {
-		kind: "scalar",
-		construct: (data: string) => new HACustomTag(tagName, data),
-		instanceOf: HACustomTag,
-		predicate: (obj: unknown): obj is HACustomTag =>
-			obj instanceof HACustomTag && obj.tag === tagName,
-		represent: (obj: object) => (obj as HACustomTag).value,
+function createHATag(tagName: string): ScalarTagDefinition<HACustomTag> {
+	return defineScalarTag(tagName, {
+		resolve: (source, isExplicit) =>
+			isExplicit ? new HACustomTag(tagName, source) : NOT_RESOLVED,
+		identify: (data: unknown) =>
+			data instanceof HACustomTag && data.tag === tagName,
+		represent: (data: HACustomTag) => data.value,
 	});
 }
 
+const HA_TAGS = [
+	"!include",
+	"!secret",
+	"!env_var",
+	"!input",
+	"!include_dir_list",
+	"!include_dir_named",
+	"!include_dir_merge_list",
+	"!include_dir_merge_named",
+].map(createHATag);
+
 /**
- * Custom YAML schema that handles Home Assistant tags for both parsing and dumping
+ * Schema used to parse Home Assistant YAML. It matches the js-yaml v4
+ * DEFAULT_SCHEMA (core schema plus extra tags) and adds HA custom tags.
  */
-const HA_YAML_SCHEMA = yaml.DEFAULT_SCHEMA.extend([
-	createHATagType("!include"),
-	createHATagType("!secret"),
-	createHATagType("!env_var"),
-	createHATagType("!input"),
-	createHATagType("!include_dir_list"),
-	createHATagType("!include_dir_named"),
-	createHATagType("!include_dir_merge_list"),
-	createHATagType("!include_dir_merge_named"),
-]);
+const HA_LOAD_SCHEMA = CORE_SCHEMA.withTags(
+	mergeTag,
+	timestampTag,
+	binaryTag,
+	omapTag,
+	pairsTag,
+	setTag,
+	HA_TAGS,
+);
+
+/**
+ * Schema used to serialize Home Assistant YAML, preserving HA custom tags
+ */
+const HA_DUMP_SCHEMA = DUMP_SCHEMA.withTags(HA_TAGS);
 
 /**
  * Reads the Home Assistant configuration file
@@ -65,7 +94,9 @@ export async function readHAConfig(): Promise<string> {
  */
 export function parseYAML(content: string): HaConfig {
 	try {
-		return (yaml.load(content, { schema: HA_YAML_SCHEMA }) || {}) as HaConfig;
+		// loadAll accepts empty or comment-only input, which load rejects in v5
+		const [document] = loadAll(content, { schema: HA_LOAD_SCHEMA });
+		return (document || {}) as HaConfig;
 	} catch (error) {
 		throw new Error(`Failed to parse YAML: ${(error as Error).message}`);
 	}
@@ -75,12 +106,11 @@ export function parseYAML(content: string): HaConfig {
  * Dumps a config object to YAML, preserving Home Assistant custom tags
  */
 export function dumpYAML(config: HaConfig): string {
-	return yaml.dump(config, {
-		schema: HA_YAML_SCHEMA,
+	return dump(config, {
+		schema: HA_DUMP_SCHEMA,
 		indent: 2,
 		lineWidth: -1,
 		noRefs: true,
-		sortKeys: false,
 	});
 }
 

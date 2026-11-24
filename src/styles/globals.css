@@ -1,8 +1,19 @@
-/** biome-ignore-all lint/suspicious/noUnknownAtRules: <tailwind> */
-/** biome-ignore-all lint/suspicious/noUnknownAtRules: <apply> */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../../tailwind.config.mjs";
+
+/*
+ * Tailwind v4 changed the default border color to currentColor.
+ * Keep the v3 default so Material Tailwind borders look the same.
+ */
+@layer base {
+	*,
+	::after,
+	::before,
+	::backdrop,
+	::file-selector-button {
+		border-color: var(--color-gray-200, currentColor);
+	}
+}
 
 @layer base {
 	:root {
