@@ -1,5 +1,4 @@
-
-// tailwind.config.js (or tailwind.config.mjs)
+// tailwind.config.mjs (loaded from globals.css via @config)
 import withMT from "@material-tailwind/react/utils/withMT";
 
 export default withMT({

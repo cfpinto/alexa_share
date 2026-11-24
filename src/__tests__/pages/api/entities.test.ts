@@ -9,11 +9,11 @@ import {
 	vi,
 } from "vitest";
 import { MessageType, RequestTypeId } from "@/types/home-assistant.types";
-import * as addonOptionsUtil from "../../utils/addon-options.util";
-import * as haConfigUtil from "../../utils/ha-config.util";
+import * as addonOptionsUtil from "@/utils/addon-options.util";
+import * as haConfigUtil from "@/utils/ha-config.util";
 
-vi.mock("../../utils/addon-options.util");
-vi.mock("../../utils/ha-config.util");
+vi.mock("@/utils/addon-options.util");
+vi.mock("@/utils/ha-config.util");
 
 type WsEventCallback = (data?: unknown) => void;
 
@@ -155,7 +155,7 @@ describe("/api/entities", () => {
 	});
 
 	it("should return 405 for non-GET requests", async () => {
-		const handler = (await import("./entities")).default;
+		const handler = (await import("@/pages/api/entities")).default;
 		req = { method: "POST" };
 
 		await handler(req as NextApiRequest, res as NextApiResponse);
@@ -168,7 +168,7 @@ describe("/api/entities", () => {
 	});
 
 	it("should return 405 for PUT request", async () => {
-		const handler = (await import("./entities")).default;
+		const handler = (await import("@/pages/api/entities")).default;
 		req = { method: "PUT" };
 
 		await handler(req as NextApiRequest, res as NextApiResponse);
@@ -181,7 +181,7 @@ describe("/api/entities", () => {
 	});
 
 	it("should return 405 for DELETE request", async () => {
-		const handler = (await import("./entities")).default;
+		const handler = (await import("@/pages/api/entities")).default;
 		req = { method: "DELETE" };
 
 		await handler(req as NextApiRequest, res as NextApiResponse);
@@ -194,7 +194,7 @@ describe("/api/entities", () => {
 	});
 
 	it("should successfully return compiled entities", async () => {
-		const handler = (await import("./entities")).default;
+		const handler = (await import("@/pages/api/entities")).default;
 		req = { method: "GET" };
 
 		const handlerPromise = handler(
@@ -236,7 +236,7 @@ describe("/api/entities", () => {
 	});
 
 	it("should mark entity as shared when in config", async () => {
-		const handler = (await import("./entities")).default;
+		const handler = (await import("@/pages/api/entities")).default;
 		req = { method: "GET" };
 
 		vi.spyOn(haConfigUtil, "parseYAML").mockReturnValue({
@@ -277,7 +277,7 @@ describe("/api/entities", () => {
 	});
 
 	it("should handle WebSocket errors", async () => {
-		const handler = (await import("./entities")).default;
+		const handler = (await import("@/pages/api/entities")).default;
 		req = { method: "GET" };
 
 		const handlerPromise = handler(
@@ -301,7 +301,7 @@ describe("/api/entities", () => {
 	});
 
 	it("should handle entity without device", async () => {
-		const handler = (await import("./entities")).default;
+		const handler = (await import("@/pages/api/entities")).default;
 		req = { method: "GET" };
 
 		const entityWithoutDevice = {
@@ -341,7 +341,7 @@ describe("/api/entities", () => {
 	});
 
 	it("should handle entity without area", async () => {
-		const handler = (await import("./entities")).default;
+		const handler = (await import("@/pages/api/entities")).default;
 		req = { method: "GET" };
 
 		const entityWithoutArea = {
@@ -379,7 +379,7 @@ describe("/api/entities", () => {
 	});
 
 	it("should use environment variables when available", async () => {
-		const handler = (await import("./entities")).default;
+		const handler = (await import("@/pages/api/entities")).default;
 		const originalEnv = process.env;
 		process.env = {
 			...originalEnv,
@@ -408,7 +408,7 @@ describe("/api/entities", () => {
 	});
 
 	it("should filter entities by configured domains", async () => {
-		const handler = (await import("./entities")).default;
+		const handler = (await import("@/pages/api/entities")).default;
 		req = { method: "GET" };
 
 		const switchEntity = {
@@ -453,7 +453,7 @@ describe("/api/entities", () => {
 	});
 
 	it("should handle getAddonOptions errors", async () => {
-		const handler = (await import("./entities")).default;
+		const handler = (await import("@/pages/api/entities")).default;
 		req = { method: "GET" };
 
 		vi.spyOn(addonOptionsUtil, "getAddonOptions").mockRejectedValue(
@@ -470,7 +470,7 @@ describe("/api/entities", () => {
 	});
 
 	it("should handle readHAConfig errors", async () => {
-		const handler = (await import("./entities")).default;
+		const handler = (await import("@/pages/api/entities")).default;
 		req = { method: "GET" };
 
 		vi.spyOn(haConfigUtil, "readHAConfig").mockRejectedValue(
@@ -487,7 +487,7 @@ describe("/api/entities", () => {
 	});
 
 	it("should send auth message on WebSocket open", async () => {
-		const handler = (await import("./entities")).default;
+		const handler = (await import("@/pages/api/entities")).default;
 		req = { method: "GET" };
 
 		const handlerPromise = handler(
@@ -511,7 +511,7 @@ describe("/api/entities", () => {
 	});
 
 	it("should send registry requests after auth_ok", async () => {
-		const handler = (await import("./entities")).default;
+		const handler = (await import("@/pages/api/entities")).default;
 		req = { method: "GET" };
 
 		const handlerPromise = handler(
@@ -554,7 +554,7 @@ describe("/api/entities", () => {
 	});
 
 	it("should close WebSocket after receiving all data", async () => {
-		const handler = (await import("./entities")).default;
+		const handler = (await import("@/pages/api/entities")).default;
 		req = { method: "GET" };
 
 		const handlerPromise = handler(
@@ -574,7 +574,7 @@ describe("/api/entities", () => {
 	});
 
 	it("should handle ArrayBuffer message data", async () => {
-		const handler = (await import("./entities")).default;
+		const handler = (await import("@/pages/api/entities")).default;
 		req = { method: "GET" };
 
 		const handlerPromise = handler(
@@ -630,7 +630,7 @@ describe("/api/entities", () => {
 	});
 
 	it("should handle array of Buffer message data", async () => {
-		const handler = (await import("./entities")).default;
+		const handler = (await import("@/pages/api/entities")).default;
 		req = { method: "GET" };
 
 		const handlerPromise = handler(
@@ -680,7 +680,7 @@ describe("/api/entities", () => {
 	});
 
 	it("should use default domains when haEntityDomains not configured", async () => {
-		const handler = (await import("./entities")).default;
+		const handler = (await import("@/pages/api/entities")).default;
 		req = { method: "GET" };
 
 		vi.spyOn(addonOptionsUtil, "getAddonOptions").mockResolvedValue({
@@ -723,7 +723,7 @@ describe("/api/entities", () => {
 	});
 
 	it("should use empty token when SUPERVISOR_TOKEN and haAccessToken are not set", async () => {
-		const handler = (await import("./entities")).default;
+		const handler = (await import("@/pages/api/entities")).default;
 		const originalEnv = process.env;
 		delete process.env.SUPERVISOR_TOKEN;
 
@@ -757,7 +757,7 @@ describe("/api/entities", () => {
 	});
 
 	it("should use default websocket URL when HA_WEBSOCKET_URL and haWebsocketUrl are not set", async () => {
-		const handler = (await import("./entities")).default;
+		const handler = (await import("@/pages/api/entities")).default;
 		const originalEnv = process.env;
 		delete process.env.HA_WEBSOCKET_URL;
 

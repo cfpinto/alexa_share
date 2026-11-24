@@ -12,17 +12,15 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'pnpm'
 
       - name: Install dependencies
@@ -37,7 +35,7 @@ jobs:
       - name: Check for unused dependencies
         run: |
           echo "Checking for unused dependencies..."
-          pnpm dlx depcheck --ignores="@types/*,@vitejs/plugin-react,vitest,@vitest/ui,@vitest/coverage-v8,jsdom,@testing-library/*,tailwindcss,postcss,autoprefixer"
+          pnpm dlx depcheck --ignores="@types/*,@vitejs/plugin-react,vitest,@vitest/ui,@vitest/coverage-v8,jsdom,@testing-library/*,tailwindcss,@tailwindcss/postcss,postcss"
 
   security:
     name: Security Audit
@@ -45,17 +43,15 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'pnpm'
 
       - name: Run security audit
@@ -68,17 +64,15 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'pnpm'
 
       - name: Install dependencies

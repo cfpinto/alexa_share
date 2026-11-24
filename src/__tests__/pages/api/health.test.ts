@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import handler from "./health";
+import handler from "@/pages/api/health";
 
 describe("/api/health", () => {
 	let req: Partial<NextApiRequest>;

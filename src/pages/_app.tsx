@@ -5,6 +5,24 @@ import type { AppProps } from "next/app";
 import { useState } from "react";
 import { Toaster } from "react-hot-toast";
 
+/**
+ * Tailwind v4 removed the `bg-opacity-*` utilities that Material Tailwind 2.x
+ * uses. Move the opacity into the color class so these components keep their
+ * semi-transparent backgrounds.
+ */
+const materialTailwindTheme = {
+	tabsHeader: {
+		styles: { base: { bg: "bg-blue-gray-50/60", bgOpacity: "" } },
+	},
+	dialog: {
+		styles: {
+			base: {
+				backdrop: { backgroundColor: "bg-black/60", backgroundOpacity: "" },
+			},
+		},
+	},
+};
+
 export default function App({ Component, pageProps }: AppProps) {
 	const [queryClient] = useState(
 		() =>
@@ -20,7 +38,7 @@ export default function App({ Component, pageProps }: AppProps) {
 
 	return (
 		<QueryClientProvider client={queryClient}>
-			<ThemeProvider>
+			<ThemeProvider value={materialTailwindTheme}>
 				<Toaster
 					position="top-right"
 					toastOptions={{
